@@ -25,14 +25,20 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		/* https://www.kernel.org/doc/Documentation/devicetree/bindings/regulator/regulator.txt */
 		reg_usb_otg_vbus: regulator@0 {
 			compatible = "regulator-fixed";
 			reg = <0>;
 			regulator-name = "usb_otg_vbus";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
-			gpio = <&gpio4 15 0>;
+			regulator-always-on;
+			gpio = <&gpio1 28 0>;
 			enable-active-high;
+
+			regulator-state-mem {
+				regulator-off-in-suspend;
+			};
 		};
 
 		reg_usb_h1_vbus: regulator@1 {
@@ -41,8 +47,13 @@
 			regulator-name = "usb_h1_vbus";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
-			gpio = <&gpio1 28 0>;
+			regulator-always-on;
+			gpio = <&gpio4 21 0>;
 			enable-active-high;
+
+			regulator-state-mem {
+				regulator-off-in-suspend;
+			};
 		};
 
 		reg_audio: regulator@2 {
@@ -210,23 +221,6 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c1_2>;
 	status = "okay";
-
-	hdmi_edid: edid@50 {
-		compatible = "fsl,imx6-hdmi-i2c";
-		reg = <0x50>;
-	};
-
-	ov564x_mipi: ov564x_mipi@3c {
-		compatible = "ovti,ov564x_mipi";
-		reg = <0x3c>;
-		clocks = <&clks 200>;
-		clock-names = "csi_mclk";
-		pwn-gpios = <&gpio3 13 1>;
-		rst-gpios = <&gpio4 10 0>;
-		csi_id = <1>;
-		mclk = <24000000>;
-		mclk_source = <0>;
-	};
 };
 
 &i2c2 {
@@ -325,10 +319,16 @@
 	pinctrl-0 = <&pinctrl_i2c3_3>;
 	status = "okay";
 
-	/* DS1337 RTC module */
-	rtc@0x68 {
-		compatible = "dallas,ds1337";
-		reg = <0x68>;
+	tc358743_mipi: tc358743_mipi@0f {
+		compatible = "toshiba,tc358743";
+		reg = <0x0f>;
+		clocks = <&clks 200>;
+		clock-names = "csi_mclk";
+		pwn-gpios = <&gpio3 13 1>;
+		rst-gpios = <&gpio4 22 0>;
+		csi_id = <1>;
+		mclk = <24000000>;
+		mclk_source = <0>;
 	};
 };
 
@@ -418,7 +418,7 @@
 		pinctrl_i2c3_3: i2c3grp {
 			fsl,pins = <
 				MX6QDL_PAD_GPIO_5__I2C3_SCL		0x4001b8b1
-				MX6QDL_PAD_GPIO_16__I2C3_SDA		0x4001b8b1
+				MX6QDL_PAD_GPIO_6__I2C3_SDA		0x4001b8b1
 			>;
 		};
 
@@ -462,11 +462,21 @@
 			>;
 		};
 
-		/* Linux Console */
-		pinctrl_uart1_1: uart1grp-1 { /* RX/TX only */
+		/* UART1 (Console) */
+		pinctrl_uart1_1: uart1grp-1 { /* RX/TX RTS/CTS */
 			fsl,pins = <
 				MX6QDL_PAD_CSI0_DAT10__UART1_TX_DATA	0x1b0b1
 				MX6QDL_PAD_CSI0_DAT11__UART1_RX_DATA	0x1b0b1
+				MX6QDL_PAD_EIM_D19__UART1_CTS_B		0x1b0b1
+				MX6QDL_PAD_EIM_D20__UART1_RTS_B		0x1b0b1
+			>;
+		};
+
+		/* UART2 (Spare) */
+		pinctrl_uart2_1: uart2grp-1 { /* RX/TX only mode */
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_8__UART2_RX_DATA	0x1b0b1
+				MX6QDL_PAD_GPIO_7__UART2_TX_DATA	0x1b0b1
 			>;
 		};
 
@@ -489,19 +499,27 @@
 			>;
 		};
 
-		/* Variscite UART2 support */
-		pinctrl_uart3_2: uart3grp-2 {	/* RX/TX RTS/CTS */
+		/* UART3 (PDDL) */
+		pinctrl_uart3_1: uart3grp-1 {	/* RX/TX only mode */
 			fsl,pins = <
 				MX6QDL_PAD_EIM_D25__UART3_RX_DATA	0x1b0b1
 				MX6QDL_PAD_EIM_D24__UART3_TX_DATA	0x1b0b1
-				MX6QDL_PAD_EIM_D23__UART3_CTS_B		0x1b0b1
-				MX6QDL_PAD_EIM_EB3__UART3_RTS_B		0x1b0b1
 			>;
 		};
 
-		pinctrl_usbotg_var: usbotggrp-3 {
+		/* UART4 (Pixhawk) */
+		pinctrl_uart4_1: uart4grp-1 {	/* RX/TX only mode */
 			fsl,pins = <
-				MX6QDL_PAD_ENET_RX_ER__USB_OTG_ID 0x17059
+				MX6QDL_PAD_KEY_ROW0__UART4_RX_DATA	0x1b0b1
+				MX6QDL_PAD_KEY_COL0__UART4_TX_DATA	0x1b0b1
+			>;
+		};
+
+		/* UART5 (Iridium) */
+		pinctrl_uart5_1: uart5grp-1 {	/* RX/TX only mode */
+			fsl,pins = <
+				MX6QDL_PAD_KEY_ROW1__UART5_RX_DATA	0x1b0b1
+				MX6QDL_PAD_KEY_COL1__UART5_TX_DATA	0x1b0b1
 			>;
 		};
 
@@ -595,11 +613,11 @@
 			>;
 		};
 
-		pinctrl_ecspi3_1: ecspi3grp {
+		pinctrl_ecspi1_1: ecspi1grp {
 			fsl,pins = <
-				MX6QDL_PAD_DISP0_DAT2__ECSPI3_MISO	0x100b1
-				MX6QDL_PAD_DISP0_DAT1__ECSPI3_MOSI	0x100b1
-				MX6QDL_PAD_DISP0_DAT0__ECSPI3_SCLK	0x100b1
+				MX6QDL_PAD_DISP0_DAT22__ECSPI1_MISO	0x100b1
+				MX6QDL_PAD_DISP0_DAT21__ECSPI1_MOSI	0x100b1
+				MX6QDL_PAD_DISP0_DAT20__ECSPI1_SCLK	0x100b1
 			>;
 		};
 
@@ -678,13 +696,13 @@
 	status = "okay";
 };
 
-/* Console Uart */
+/* ttymxc0 UART (Console) */
 &uart1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart1_1>;
+	fsl,uart-has-rtscts;
 	status = "okay";
 };
-
 
 /* Bluetooth Uart */
 &uart2 {
@@ -694,11 +712,24 @@
 	status = "okay";
 };
 
-/* ttymxc2 UART */
+/* ttymxc2 UART (PDDL) */
 &uart3 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart3_2>;
-	fsl,uart-has-rtscts;
+	pinctrl-0 = <&pinctrl_uart3_1>;
+	status = "okay";
+};
+
+/* ttymxc3 UART (Pixhawk) */
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart4_1>;
+	status = "okay";
+};
+
+/* ttymxc4 UART (Iridium) */
+&uart5 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart5_1>;
 	status = "okay";
 };
 
@@ -714,12 +745,10 @@
 };
 
 &usbotg {
-	vbus-supply = <&reg_usb_otg_vbus>;
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usbotg_var>;
 	disable-over-current;
 	/* dr_mode: One of "host", "peripheral" or "otg". Defaults to "otg" */
-	dr_mode = "otg";	/* Use "host" if you would like to use the USB0 type A connector */
+	dr_mode = "peripheral";
 	srp-disable;
 	hnp-disable;
 	adp-disable;
@@ -754,7 +783,8 @@
 &usdhc2 {	/* uSDHC2, MMC/SD card */
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_usdhc2_2>;
-	cd-gpios = <&gpio1 6 1>;
+	cd-gpios = <&gpio1 4 1>;
+	bus-width = <4>;
 	no-1-8-v;
 	keep-power-in-suspend;
 	enable-sdio-wakeup;
