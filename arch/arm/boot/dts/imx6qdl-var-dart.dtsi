@@ -320,7 +320,7 @@
 	status = "okay";
 
 	tc358743_mipi: tc358743_mipi@0f {
-		compatible = "toshiba,tc358743";
+		compatible = "tc358743";
 		reg = <0x0f>;
 		clocks = <&clks 200>;
 		clock-names = "csi_mclk";
