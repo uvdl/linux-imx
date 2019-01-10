@@ -220,7 +220,7 @@
 	pinctrl-0 = <&pinctrl_ecspi1>;
 	status = "okay";
 
-	spidev10: spi@0 {
+	spi@0 {
 		compatible = "spidev";
 		spi-max-frequency = <57600000>;
 		reg = <0>;
