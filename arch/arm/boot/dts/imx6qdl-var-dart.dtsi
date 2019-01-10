@@ -195,24 +195,71 @@
 	status = "okay";
 };
 
-&reg_arm {
-	vin-supply = <&sw1a_reg>;
+&can1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_flexcan1_3>;
+	status = "okay";
 };
 
-&reg_pu {
-	vin-supply = <&sw1c_reg>;
+&dcic1 {
+	dcic_id = <0>;
+	dcic_mux = "dcic-hdmi";
+	status = "okay";
 };
 
-&reg_soc {
-	vin-supply = <&sw1c_reg>;
+&dcic2 {
+	dcic_id = <1>;
+	dcic_mux = "dcic-lvds1";
+	status = "okay";
+};
+
+&ecspi1 {
+	fsl,spi-num-chipselects = <2>;
+	cs-gpios = <&gpio5 17 0>, <&gpio4 10 0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi1>;
+	status = "okay";
+
+	spidev10: spi@0 {
+		compatible = "spidev";
+		spi-max-frequency = <57600000>;
+		reg = <0>;
+	};
 };
 
 &fec {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_enet_4>;
+	pinctrl-0 = <&pinctrl_enet>;
 	phy-mode = "rgmii";
 	phy-reset-gpios = <&gpio1 25 0>;
 	fsl,magic-packet;
+	status = "okay";
+};
+
+&gpc {
+	/* use ldo-bypass, u-boot will check it and configure */
+	fsl,ldo-bypass = <1>;
+};
+
+&hdmi_audio {
+	status = "okay";
+};
+
+&hdmi_cec {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hdmi_cec>;
+	status = "okay";
+};
+
+&hdmi_core {
+	ipu_id = <0>;
+	disp_id = <0>;
+	status = "okay";
+};
+
+&hdmi_video {
+	fsl,phy_reg_vlev = <0x0294>;
+	fsl,phy_reg_cksymtx = <0x800d>;
 	status = "okay";
 };
 
@@ -318,18 +365,6 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c3_3>;
 	status = "okay";
-
-	tc358743_mipi: tc358743_mipi@0f {
-		compatible = "tc358743";
-		reg = <0x0f>;
-		clocks = <&clks 200>;
-		clock-names = "csi_mclk";
-		pwn-gpios = <&gpio3 13 1>;
-		rst-gpios = <&gpio4 22 0>;
-		csi_id = <1>;
-		mclk = <24000000>;
-		mclk_source = <0>;
-	};
 };
 
 &iomuxc {
@@ -362,23 +397,32 @@
 			>;
 		};
 
-		pinctrl_enet_4: enetgrp {
+		pinctrl_ecspi1: ecspi1grp {
 			fsl,pins = <
-				MX6QDL_PAD_ENET_MDIO__ENET_MDIO		0x1b0b0
-				MX6QDL_PAD_ENET_MDC__ENET_MDC		0x1b0b0
-				MX6QDL_PAD_RGMII_TXC__RGMII_TXC		0x1b0b0
-				MX6QDL_PAD_RGMII_TD0__RGMII_TD0		0x1b0b0
-				MX6QDL_PAD_RGMII_TD1__RGMII_TD1		0x1b0b0
-				MX6QDL_PAD_RGMII_TD2__RGMII_TD2		0x1b0b0
-				MX6QDL_PAD_RGMII_TD3__RGMII_TD3		0x1b0b0
-				MX6QDL_PAD_RGMII_TX_CTL__RGMII_TX_CTL	0x1b0b0
-				MX6QDL_PAD_ENET_REF_CLK__ENET_TX_CLK	0x1b0b0
-				MX6QDL_PAD_RGMII_RXC__RGMII_RXC		0x1b0b0
-				MX6QDL_PAD_RGMII_RD0__RGMII_RD0		0x1b0b0
-				MX6QDL_PAD_RGMII_RD1__RGMII_RD1		0x1b0b0
-				MX6QDL_PAD_RGMII_RD2__RGMII_RD2		0x1b0b0
-				MX6QDL_PAD_RGMII_RD3__RGMII_RD3		0x1b0b0
-				MX6QDL_PAD_RGMII_RX_CTL__RGMII_RX_CTL	0x1b0b0
+				MX6QDL_PAD_DISP0_DAT22__ECSPI1_MISO	0x000100b1
+				MX6QDL_PAD_DISP0_DAT21__ECSPI1_MOSI	0x000100b1
+				MX6QDL_PAD_DISP0_DAT20__ECSPI1_SCLK	0x000100b1
+				MX6QDL_PAD_DISP0_DAT23__ECSPI1_SS0	0x80000000 /* CS0 */
+				MX6QDL_PAD_KEY_COL2__ECSPI1_SS1 	0x80000000 /* CS1 (N/C on Iris2) */
+			>;
+		};
+
+		pinctrl_enet: enetgrp {
+			fsl,pins = <
+				MX6QDL_PAD_RGMII_TXC__RGMII_TXC		0x0001b0b0
+				MX6QDL_PAD_RGMII_TD0__RGMII_TD0		0x0001b0b0
+				MX6QDL_PAD_RGMII_TD1__RGMII_TD1		0x0001b0b0
+				MX6QDL_PAD_RGMII_TD2__RGMII_TD2		0x0001b0b0
+				MX6QDL_PAD_RGMII_TD3__RGMII_TD3		0x0001b0b0
+				MX6QDL_PAD_RGMII_TX_CTL__RGMII_TX_CTL	0x0001b0b0
+				MX6QDL_PAD_ENET_REF_CLK__ENET_TX_CLK	0x0001b0b0
+				MX6QDL_PAD_RGMII_RXC__RGMII_RXC		0x0001b0b0
+				MX6QDL_PAD_RGMII_RD0__RGMII_RD0		0x0001b0b0
+				MX6QDL_PAD_RGMII_RD1__RGMII_RD1		0x0001b0b0
+				MX6QDL_PAD_RGMII_RD2__RGMII_RD2		0x0001b0b0
+				MX6QDL_PAD_RGMII_RD3__RGMII_RD3		0x0001b0b0
+				MX6QDL_PAD_RGMII_RX_CTL__RGMII_RX_CTL	0x0001b0b0
+				MX6QDL_PAD_ENET_CRS_DV__GPIO1_IO25	0x00000831 /* PHY Reset */
 			>;
 		};
 
@@ -456,9 +500,9 @@
 			>;
 		};
 
-		pinctrl_pwm1_1: pwm1grp {
+		pinctrl_pwm2: pwm2grp {
 			fsl,pins = <
-				MX6QDL_PAD_DISP0_DAT9__PWM2_OUT		0x1b0b1
+				MX6QDL_PAD_DISP0_DAT9__PWM2_OUT		0x0001b0b1
 			>;
 		};
 
@@ -613,14 +657,6 @@
 			>;
 		};
 
-		pinctrl_ecspi1_1: ecspi1grp {
-			fsl,pins = <
-				MX6QDL_PAD_DISP0_DAT22__ECSPI1_MISO	0x100b1
-				MX6QDL_PAD_DISP0_DAT21__ECSPI1_MOSI	0x100b1
-				MX6QDL_PAD_DISP0_DAT20__ECSPI1_SCLK	0x100b1
-			>;
-		};
-
 		pinctrl_flexcan1_3: flexcan1grp {
 			fsl,pins = <
 				MX6QDL_PAD_GPIO_7__FLEXCAN1_TX		0x80000000
@@ -628,45 +664,6 @@
 			>;
 		};
 	};
-};
-
-&dcic1 {
-	dcic_id = <0>;
-	dcic_mux = "dcic-hdmi";
-	status = "okay";
-};
-
-&dcic2 {
-	dcic_id = <1>;
-	dcic_mux = "dcic-lvds1";
-	status = "okay";
-};
-
-&gpc {
-	/* use ldo-bypass, u-boot will check it and configure */
-	fsl,ldo-bypass = <1>;
-};
-
-&hdmi_audio {
-	status = "okay";
-};
-
-&hdmi_cec {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_hdmi_cec>;
-	status = "okay";
-};
-
-&hdmi_core {
-	ipu_id = <0>;
-	disp_id = <0>;
-	status = "okay";
-};
-
-&hdmi_video {
-	fsl,phy_reg_vlev = <0x0294>;
-	fsl,phy_reg_cksymtx = <0x800d>;
-	status = "okay";
 };
 
 &mipi_csi {
@@ -686,10 +683,29 @@
 
 &pwm2 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm1_1>;
+	pinctrl-0 = <&pinctrl_pwm2>;
 	status = "okay";
 };
 
+&reg_arm {
+	vin-supply = <&sw1a_reg>;
+};
+
+&reg_pu {
+	vin-supply = <&sw1c_reg>;
+};
+
+&reg_soc {
+	vin-supply = <&sw1c_reg>;
+};
+
+&snvs_pwrkey {
+	status = "okay";
+};
+
+&snvs_poweroff {
+	status = "okay";
+};
 
 &ssi2 {
 	fsl,mode = "i2s-slave";
@@ -730,12 +746,6 @@
 &uart5 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart5_1>;
-	status = "okay";
-};
-
-&can1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_flexcan1_3>;
 	status = "okay";
 };
 
@@ -797,13 +807,5 @@
 	non-removable;
 	keep-power-in-suspend;
 	enable-sdio-wakeup;
-	status = "okay";
-};
-
-&snvs_pwrkey {
-	status = "okay";
-};
-
-&snvs_poweroff {
 	status = "okay";
 };
