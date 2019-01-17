@@ -1,0 +1,111 @@
+/*
+ * Copyright (C) 2015-2017 Variscite Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/dts-v1/;
+
+#include "imx6q.dtsi"
+#include "imx6qdl-iris2.dtsi"
+#include "imx6qdl-var-solocb-dt6cb-displays.dtsi"
+
+/ {
+	model = "Variscite i.MX6 QUAD VAR-DART Smart Device Board";
+	compatible = "fsl,imx6q-var-dart", "fsl,imx6q";    # shouldn't this be "fsl,imx6q-iris2"?
+
+	gpio-keys {
+		compatible = "gpio-keys";
+		back {
+			label = "Back";
+			gpios = <&gpio4 26 1>;
+			linux,code = <KEY_BACK>;
+			gpio-key,wakeup;
+		};
+		home {
+			label = "Home";
+			gpios = <&gpio4 24 1>;
+			linux,code = <KEY_HOMEPAGE>;
+			gpio-key,wakeup;
+		};
+		menu {
+			label = "Menu";
+			gpios = <&gpio4 25 1>;
+			linux,code = <KEY_MENU>;
+			gpio-key,wakeup;
+		};
+	};
+};
+
+&cpu0 {
+	operating-points = <
+		/* kHz    uV */
+		1200000	1350000
+		996000	1250000
+		852000	1250000
+		792000	1175000
+		396000	1175000
+	>;
+	fsl,soc-operating-points = <
+		/* ARM kHz  SOC-PU uV */
+		1200000	1275000
+		996000	1250000
+		852000	1250000
+		792000	1250000
+		396000	1250000
+	>;
+};
+
+&ecspi1 {
+	fsl,spi-num-chipselects = <1>;
+	cs-gpios = <&gpio5 17 0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi1>;
+	status = "okay";
+
+	ksz9893: ksz9893@0 {
+		compatible = "microchip,ksz9893";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+		spi-cpha;
+		spi-cpol;
+		status = "okay";
+	};
+};
+
+&ldb {
+	lvds-channel@0 {
+		crtc = "ipu2-di0";
+	};
+
+	lvds-channel@1 {
+		crtc = "ipu2-di1";
+	};
+};
+
+&touch {
+	interrupt-parent = <&gpio1>;
+	interrupts = <4 0>;
+};
+
+&mxcfb1 {
+	status = "okay";
+};
+
+&mxcfb2 {
+	status = "okay";
+};
+
+&mxcfb3 {
+	status = "okay";
+};
+
+&mxcfb4 {
+	status = "okay";
+};
+
+&sata {
+	status = "disabled";
+};
