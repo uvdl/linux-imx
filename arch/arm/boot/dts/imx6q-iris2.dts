@@ -14,7 +14,7 @@
 
 / {
 	model = "Variscite i.MX6 QUAD VAR-DART Smart Device Board";
-	compatible = "fsl,imx6q-var-dart", "fsl,imx6q";    # shouldn't this be "fsl,imx6q-iris2"?
+	compatible = "fsl,imx6q-var-dart", "fsl,imx6q";
 
 	gpio-keys {
 		compatible = "gpio-keys";

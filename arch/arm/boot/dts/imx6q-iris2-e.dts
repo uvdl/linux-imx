@@ -13,7 +13,7 @@
 
 / {
 	model = "Variscite i.MX6 QUAD VAR-DART Smart Device Board";
-	compatible = "fsl,imx6q-var-dart", "fsl,imx6q";    # shouldn't this be "fsl,imx6q-iris2"?
+	compatible = "fsl,imx6q-var-dart", "fsl,imx6q";
 
 	gpio-keys {
 		compatible = "gpio-keys";
@@ -74,15 +74,23 @@
 		interrupts = <14 IRQ_TYPE_LEVEL_LOW>;
 		status = "okay";
 		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			port@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
 				reg = <0>;
 				label = "lan1";
 			};
 			port@1 {
+				#address-cells = <1>;
+				#size-cells = <0>;
 				reg = <1>;
 				label = "lan2";
 			};
 			port@2 {
+				#address-cells = <1>;
+				#size-cells = <0>;
 				reg = <2>;
 				label = "cpu";
 				ethernet = <&fec>;
@@ -96,14 +104,14 @@
 };
 
 &fec {
+	phy-mode = "rgmii-id";
+	phy-reset-duration = <10>;	/* 10ms reset duration (per KSZ9393R.pdf pg. 171) */
+	phy-reset-post-delay = <1>;	/* >100us post-reset delay (per KSZ9393R.pdf pg. 171) */
+	phy-supply = <&reg_usb_otg_vbus>;
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
 	};
-	phy-mode = "rgmii-id";
-	phy-reset-duration = <10>;	# 10ms reset duration (per KSZ9393R.pdf pg. 171)
-	phy-reset-post-delay = <1>;	# >100us post-reset delay (per KSZ9393R.pdf pg. 171)
-	phy-supply = <&reg_usb_otg_vbus>;
 };
 
 &ldb {
