@@ -75,20 +75,14 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			port@0 {
-				#address-cells = <1>;
-				#size-cells = <0>;
 				reg = <0>;
 				label = "lan1";
 			};
 			port@1 {
-				#address-cells = <1>;
-				#size-cells = <0>;
 				reg = <1>;
 				label = "lan2";
 			};
 			port@2 {
-				#address-cells = <1>;
-				#size-cells = <0>;
 				reg = <2>;
 				label = "cpu";
 				ethernet = <&fec>;
