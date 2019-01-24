@@ -10,6 +10,7 @@
 
 #include "imx6q.dtsi"
 #include "imx6qdl-iris2.dtsi"
+#include "imx6qdl-var-solocb-dt6cb-displays.dtsi"
 
 / {
 	model = "Variscite i.MX6 QUAD VAR-DART Smart Device Board";
@@ -95,24 +96,43 @@
 	};
 };
 
+&fec {
+    phy-mode = "rgmii-rxid";
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
 &ldb {
-	status = "disabled";
+	lvds-channel@0 {
+		crtc = "ipu2-di0";
+};
+
+	lvds-channel@1 {
+		crtc = "ipu2-di1";
+	};
+};
+
+&touch {
+	interrupt-parent = <&gpio1>;
+	interrupts = <4 0>;
 };
 
 &mxcfb1 {
-	status = "disabled";
+	status = "okay";
 };
 
 &mxcfb2 {
-	status = "disabled";
+	status = "okay";
 };
 
 &mxcfb3 {
-	status = "disabled";
+	status = "okay";
 };
 
 &mxcfb4 {
-	status = "disabled";
+	status = "okay";
 };
 
 &sata {
