@@ -58,53 +58,11 @@
 	>;
 };
 
-&ecspi1 {
-	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio5 17 0>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_ecspi1>;
-	status = "okay";
-
-	ksz9893: ksz9893@0 {
-		compatible = "microchip,ksz9893";
-		reg = <0>;
-		spi-max-frequency = <40000000>;
-		spi-cpha;
-		spi-cpol;
-		status = "okay";
-		ports {
-			#address-cells = <1>;
-			#size-cells = <0>;
-			port@0 {
-				reg = <0>;
-				label = "lan1";
-			};
-			port@1 {
-				reg = <1>;
-				label = "lan2";
-			};
-			port@2 {
-				reg = <2>;
-				label = "cpu";
-				ethernet = <&fec>;
-				fixed-link {
-					speed = <1000>;
-					full-duplex;
-				};
-			};
-		};
-	};
-};
-
 &fec {
 	phy-reset-duration = <10>;	/* 10ms reset duration (per KSZ9393R.pdf pg. 171) */
 	phy-reset-post-delay = <1>;	/* >100us post-reset delay (per KSZ9393R.pdf pg. 171) */
 	phy-supply = <&reg_usb_otg_vbus>;
     phy-mode = "rgmii";
-	fixed-link {
-		speed = <1000>;
-		full-duplex;
-	};
 };
 
 &ldb {
