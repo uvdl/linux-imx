@@ -216,28 +216,18 @@
 	status = "okay";
 };
 
-&ecspi1 {
-	fsl,spi-num-chipselects = <1>;
-	// cs-gpios = <&gpio5 17 0>, <&gpio4 10 0>;
-	cs-gpios = <&gpio5 17 0>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_ecspi1>;
-	status = "okay";
-
-	spi: spi@0 {
-		compatible = "spidev";
-		spi-max-frequency = <57600000>;
-		reg = <0>;
-	};
-};
-
 &fec {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet>;
 	phy-mode = "rgmii";
+	phy-handle = <&ksz9893>;
 	phy-reset-gpios = <&gpio1 25 0>;
 	fsl,magic-packet;
 	status = "okay";
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &gpc {
@@ -412,8 +402,7 @@
 				MX6QDL_PAD_DISP0_DAT22__ECSPI1_MISO	0x000100b1
 				MX6QDL_PAD_DISP0_DAT21__ECSPI1_MOSI	0x000100b1
 				MX6QDL_PAD_DISP0_DAT20__ECSPI1_SCLK	0x000100b1
-				MX6QDL_PAD_DISP0_DAT23__ECSPI1_SS0	0x80000000 /* CS0 */
-				MX6QDL_PAD_KEY_COL2__ECSPI1_SS1 	0x80000000 /* CS1 (N/C on Iris2) */
+				MX6QDL_PAD_DISP0_DAT23__GPIO5_IO17 0x000f0b0 /* cs0 */
 			>;
 		};
 
@@ -425,7 +414,7 @@
 				MX6QDL_PAD_RGMII_TD2__RGMII_TD2		0x0001b0b0
 				MX6QDL_PAD_RGMII_TD3__RGMII_TD3		0x0001b0b0
 				MX6QDL_PAD_RGMII_TX_CTL__RGMII_TX_CTL	0x0001b0b0
-				MX6QDL_PAD_ENET_REF_CLK__ENET_TX_CLK	0x0001b0b0
+				MX6QDL_PAD_ENET_REF_CLK__ENET_TX_CLK	0x0000b0f1
 				MX6QDL_PAD_RGMII_RXC__RGMII_RXC		0x0001b0b0
 				MX6QDL_PAD_RGMII_RD0__RGMII_RD0		0x0001b0b0
 				MX6QDL_PAD_RGMII_RD1__RGMII_RD1		0x0001b0b0
@@ -433,6 +422,7 @@
 				MX6QDL_PAD_RGMII_RD3__RGMII_RD3		0x0001b0b0
 				MX6QDL_PAD_RGMII_RX_CTL__RGMII_RX_CTL	0x0001b0b0
 				MX6QDL_PAD_ENET_CRS_DV__GPIO1_IO25	0x00000831 /* PHY Reset */
+				MX6QDL_PAD_GPIO_16__ENET_REF_CLK 0x0001B0D9
 			>;
 		};
 
