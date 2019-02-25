@@ -32,18 +32,19 @@ static int dbg_mrp_vlan = 1;
 #endif
 
 #if 1
-static int mrp_10_1_2f_hack;
-static int mrp_10_1_8a_hack;
-static int mrp_10_5_1_hack;
-static int mrp_10_5_1c_hack;
-static int mrp_10_5_1d_hack;
-static int msrp_35_1_14g_hack;
-static int fqtss_hack;
-static int fqtss_34_2_3_hack;
-static int fqtss_34_2_1b_hack;
-static int fqtss_34_2_5b_hack;
-static int fqtss_34_2_9b_hack;
-static int regeneration_hack;
+static int ba_hack = false;
+static int mrp_10_1_2f_hack = false;
+static int mrp_10_1_8a_hack = false;
+static int mrp_10_5_1_hack = false;
+static int mrp_10_5_1c_hack = false;
+static int mrp_10_5_1d_hack = false;
+static int msrp_35_1_14g_hack = false;
+static int fqtss_hack = false;
+static int fqtss_34_2_3_hack = false;
+static int fqtss_34_2_1b_hack = false;
+static int fqtss_34_2_5b_hack = false;
+static int fqtss_34_2_9b_hack = false;
+static int regeneration_hack = false;
 #endif
 
 

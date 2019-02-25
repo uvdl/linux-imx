@@ -1,5 +1,5 @@
 #
-# Makefile for the Micrel network device drivers.
+# Makefile for the Microchip/Micrel network device drivers.
 #
 
 obj-$(CONFIG_ARM_KS8695_ETHER) += ks8695net.o
