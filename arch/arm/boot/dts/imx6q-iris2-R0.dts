@@ -75,6 +75,20 @@
 	};
 };
 
+&fec {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_enet>;
+	phy-mode = "rgmii";
+	phy-handle = <&ksz9893>;
+	phy-reset-gpios = <&gpio1 25 0>;
+	fsl,magic-packet;
+	status = "okay";
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
+};
+
 &ldb {
 	lvds-channel@0 {
 		crtc = "ipu2-di0";
