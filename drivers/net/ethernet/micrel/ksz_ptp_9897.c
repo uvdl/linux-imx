@@ -2925,7 +2925,7 @@ static struct ptp_msg *ptp_set_rx_info(struct ptp_info *ptp, u8 *data, u8 port,
 	return msg;
 }  /* ptp_set_rx_info */
 
-#if 1
+#if 0
 /* Used for 802.1BA test tool to accept Announce messages. */
 static int ba_hack = false;
 #endif
@@ -2940,7 +2940,7 @@ static struct ptp_msg *ptp_get_tx_info(struct ptp_info *ptp, u8 *data,
 
 	/* Need to know about PTP message for queue assignment. */
 #if 0
-#if 1
+#if 0
 	if (!ba_hack)
 #endif
 	if ((1 == ptp->op_mode || 2 == ptp->op_mode) && !ptp->tx_msg_cnt) {
@@ -3181,7 +3181,11 @@ static void ptp_set_tx_info(struct ptp_info *ptp, u8 *data, void *ptr)
 			tx_msg.ts.timestamp = (ts.t.sec << 30) | ts.t.nsec;
 		}
 	}
+#if 0
 	if (ba_hack) {
+#else
+	if (false) {
+#endif
 		if (msg->hdr.messageType == ANNOUNCE_MSG &&
 		    memcmp(&data[6], sw->info->mac_addr, ETH_ALEN))
 			memcpy(&data[6], sw->info->mac_addr, ETH_ALEN);
