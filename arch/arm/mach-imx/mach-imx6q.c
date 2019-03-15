@@ -182,7 +182,9 @@ static int ar8035_phy_fixup(struct phy_device *dev)
 
 static void __init imx6q_enet_phy_init(void)
 {
+	pr_err(">>>>>>>> %s -> (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 	if (IS_BUILTIN(CONFIG_PHYLIB)) {
+		pr_err(">>>>>>>> %s -> (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 		phy_register_fixup_for_uid(PHY_ID_KSZ9021, MICREL_PHY_ID_MASK,
 				ksz9021rn_phy_fixup);
 		phy_register_fixup_for_uid(PHY_ID_KSZ9031, MICREL_PHY_ID_MASK,
@@ -196,6 +198,7 @@ static void __init imx6q_enet_phy_init(void)
 
 static void __init imx6q_1588_init(void)
 {
+	pr_err(">>>>>>>> %s -> (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 	struct device_node *np;
 	struct clk *ptp_clk;
 	struct regmap *gpr;
@@ -206,11 +209,15 @@ static void __init imx6q_1588_init(void)
 		return;
 	}
 
+	pr_err(">>>>>>>> %s -> (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
+
 	ptp_clk = of_clk_get(np, 2);
 	if (IS_ERR(ptp_clk)) {
 		pr_warn("%s: failed to get ptp clock\n", __func__);
 		goto put_node;
 	}
+
+	pr_err(">>>>>>>> %s -> (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 
 	/*
 	 * If enet_ref from ANATOP/CCM is the PTP clock source, we need to
@@ -218,12 +225,16 @@ static void __init imx6q_1588_init(void)
 	 * (external OSC), and we need to clear the bit.
 	 */
 	gpr = syscon_regmap_lookup_by_compatible("fsl,imx6q-iomuxc-gpr");
-	if (!IS_ERR(gpr))
+	if (!IS_ERR(gpr)){
+		pr_err(">>>>>>>> %s -> (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 		regmap_update_bits(gpr, IOMUXC_GPR1,
 				IMX6Q_GPR1_ENET_CLK_SEL_MASK,
 				IMX6Q_GPR1_ENET_CLK_SEL_ANATOP);
+	}
 	else
 		pr_err("failed to find fsl,imx6q-iomuxc-gpr regmap\n");
+
+	pr_err(">>>>>>>> %s -> (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 
 	clk_put(ptp_clk);
 put_node:
@@ -308,11 +319,15 @@ static void __init imx6q_enet_clk_sel(void)
 
 static inline void imx6q_enet_init(void)
 {
+
+	pr_err(">>>>>>>> %s -> (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 	imx6_enet_mac_init("fsl,imx6q-fec", "fsl,imx6q-ocotp");
 	imx6q_enet_phy_init();
 	imx6q_1588_init();
-	if (cpu_is_imx6q() && imx_get_soc_revision() >= IMX_CHIP_REVISION_2_0)
+	if (cpu_is_imx6q() && imx_get_soc_revision() >= IMX_CHIP_REVISION_2_0){
+		pr_err(">>>>>>>> %s -> (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 		imx6q_enet_clk_sel();
+	}
 }
 
 static void __init imx6q_init_machine(void)

@@ -3610,6 +3610,9 @@ fec_probe(struct platform_device *pdev)
 	int num_tx_qs;
 	int num_rx_qs;
 
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
 	of_dma_configure(&pdev->dev, np);
 
 	fec_enet_get_queue_num(pdev, &num_tx_qs, &num_rx_qs);
@@ -3620,14 +3623,20 @@ fec_probe(struct platform_device *pdev)
 	if (!ndev)
 		return -ENOMEM;
 
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
 	SET_NETDEV_DEV(ndev, &pdev->dev);
 
 	/* setup board info structure */
 	fep = netdev_priv(ndev);
 
 	of_id = of_match_device(fec_dt_ids, &pdev->dev);
-	if (of_id)
+	if (of_id){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		pdev->id_entry = of_id->data;
+	}
 	fep->quirks = pdev->id_entry->driver_data;
 
 	fep->netdev = ndev;
@@ -3646,9 +3655,14 @@ fec_probe(struct platform_device *pdev)
 	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	fep->hwp = devm_ioremap_resource(&pdev->dev, r);
 	if (IS_ERR(fep->hwp)) {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		ret = PTR_ERR(fep->hwp);
 		goto failed_ioremap;
 	}
+
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	fep->pdev = pdev;
 	fep->dev_id = dev_id++;
@@ -3657,8 +3671,11 @@ fec_probe(struct platform_device *pdev)
 
 	if ((of_machine_is_compatible("fsl,imx6q") ||
 	     of_machine_is_compatible("fsl,imx6dl")) &&
-	    !of_property_read_bool(np, "fsl,err006687-workaround-present"))
+	    !of_property_read_bool(np, "fsl,err006687-workaround-present")){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fep->quirks |= FEC_QUIRK_ERR006687;
+	}
 
 	fec_enet_of_parse_stop_mode(pdev);
 
@@ -3673,6 +3690,8 @@ fec_probe(struct platform_device *pdev)
 
 	phy_node = of_parse_phandle(np, "phy-handle", 0);
 	if (!phy_node && of_phy_is_fixed_link(np)) {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		ret = of_phy_register_fixed_link(np);
 		if (ret < 0) {
 			dev_err(&pdev->dev,
@@ -3681,17 +3700,31 @@ fec_probe(struct platform_device *pdev)
 		}
 		phy_node = of_node_get(np);
 		fep->fixed_link = true;
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	}
 	fep->phy_node = phy_node;
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	ret = of_get_phy_mode(pdev->dev.of_node);
 	if (ret < 0) {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		pdata = dev_get_platdata(&pdev->dev);
-		if (pdata)
+		if (pdata){
+			dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 			fep->phy_interface = pdata->phy;
-		else
+		}
+		else{
+			dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 			fep->phy_interface = PHY_INTERFACE_MODE_MII;
+		}
 	} else {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fep->phy_interface = ret;
 	}
 
@@ -3699,56 +3732,89 @@ fec_probe(struct platform_device *pdev)
 
 	fep->clk_ipg = devm_clk_get(&pdev->dev, "ipg");
 	if (IS_ERR(fep->clk_ipg)) {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		ret = PTR_ERR(fep->clk_ipg);
 		goto failed_clk;
 	}
 
 	fep->clk_ahb = devm_clk_get(&pdev->dev, "ahb");
 	if (IS_ERR(fep->clk_ahb)) {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		ret = PTR_ERR(fep->clk_ahb);
 		goto failed_clk;
 	}
 	fep->itr_clk_rate = clk_get_rate(fep->clk_ahb);
 
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
 	/* enet_out is optional, depends on board */
 	fep->clk_enet_out = devm_clk_get(&pdev->dev, "enet_out");
-	if (IS_ERR(fep->clk_enet_out))
+	if (IS_ERR(fep->clk_enet_out)){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fep->clk_enet_out = NULL;
+	}
 
 	fep->ptp_clk_on = false;
 	mutex_init(&fep->ptp_clk_mutex);
 
 	/* clk_ref is optional, depends on board */
 	fep->clk_ref = devm_clk_get(&pdev->dev, "enet_clk_ref");
-	if (IS_ERR(fep->clk_ref))
+	if (IS_ERR(fep->clk_ref)){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fep->clk_ref = NULL;
+	}
 	fep->clk_ref_rate = clk_get_rate(fep->clk_ref);
 
 	/* clk_2x_txclk is optional, depends on board */
 	fep->clk_2x_txclk = devm_clk_get(&pdev->dev, "enet_2x_txclk");
-	if (IS_ERR(fep->clk_2x_txclk))
+	if (IS_ERR(fep->clk_2x_txclk)){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fep->clk_2x_txclk = NULL;
+	}
 
 	fep->bufdesc_ex = fep->quirks & FEC_QUIRK_HAS_BUFDESC_EX;
 	fep->clk_ptp = devm_clk_get(&pdev->dev, "ptp");
 	if (IS_ERR(fep->clk_ptp)) {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fep->clk_ptp = NULL;
 		fep->bufdesc_ex = false;
 	}
 
 	ret = fec_enet_clk_enable(ndev, true);
-	if (ret)
+	if (ret){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		goto failed_clk;
+	}
+
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	ret = clk_prepare_enable(fep->clk_ipg);
-	if (ret)
+	if (ret){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		goto failed_clk_ipg;
+	}
+
 	ret = clk_prepare_enable(fep->clk_ahb);
-	if (ret)
+	if (ret){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		goto failed_clk_ahb;
+	}
 
 	fep->reg_phy = devm_regulator_get(&pdev->dev, "phy");
 	if (!IS_ERR(fep->reg_phy)) {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		ret = regulator_enable(fep->reg_phy);
 		if (ret) {
 			dev_err(&pdev->dev,
@@ -3756,12 +3822,19 @@ fec_probe(struct platform_device *pdev)
 			goto failed_regulator;
 		}
 	} else {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		if (PTR_ERR(fep->reg_phy) == -EPROBE_DEFER) {
+			dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 			ret = -EPROBE_DEFER;
 			goto failed_regulator;
 		}
 		fep->reg_phy = NULL;
 	}
+
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	pm_runtime_set_autosuspend_delay(&pdev->dev, FEC_MDIO_PM_TIMEOUT);
 	pm_runtime_use_autosuspend(&pdev->dev);
@@ -3770,64 +3843,126 @@ fec_probe(struct platform_device *pdev)
 	pm_runtime_enable(&pdev->dev);
 
 	ret = fec_prepare_for_phy_reset(pdev, fep);
-	if (ret)
+	if (ret){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		goto failed_reset;
+	}
+
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	fec_ready_for_phy_reset = gpio_is_valid(fep->phy_reset_gpios);
-	if (fec_ready_for_phy_reset)
+	if (fec_ready_for_phy_reset){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fec_reset_phy(fep);
+	}
 
-	if (fep->bufdesc_ex)
+	if (fep->bufdesc_ex){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fec_ptp_init(pdev);
+	}
 
 	ret = fec_enet_init(ndev);
-	if (ret)
+	if (ret){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		goto failed_init;
+	}
+
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	for (i = 0; i < FEC_IRQ_NUM; i++) {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, i = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, i);
 		irq = platform_get_irq(pdev, i);
 		if (irq < 0) {
-			if (i)
+			dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+			if (i){
+				dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 				break;
+			}
+			dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 			ret = irq;
 			goto failed_irq;
 		}
 		ret = devm_request_irq(&pdev->dev, irq, fec_enet_interrupt,
 				       0, pdev->name, ndev);
-		if (ret)
+		if (ret){
+			dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 			goto failed_irq;
+		}
+
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 		fep->irq[i] = irq;
 	}
 
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
 	ret = of_property_read_u32(np, "fsl,wakeup_irq", &irq);
-	if (!ret && irq < FEC_IRQ_NUM)
+	if (!ret && irq < FEC_IRQ_NUM){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fep->wake_irq = fep->irq[irq];
-	else
+	}
+	else{
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fep->wake_irq = fep->irq[0];
+	}
+
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	init_completion(&fep->mdio_done);
 
 	/* board only enable one mii bus in default */
-	if (!of_get_property(np, "fsl,mii-exclusive", NULL))
+	if (!of_get_property(np, "fsl,mii-exclusive", NULL)){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fep->quirks |= FEC_QUIRK_SINGLE_MDIO;
+	}
 	ret = fec_enet_mii_init(pdev);
-	if (ret)
+	if (ret){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		goto failed_mii_init;
+	}
 
 	/* Carrier starts down, phylib will bring it up */
 	netif_carrier_off(ndev);
 	fec_enet_clk_enable(ndev, false);
 	pinctrl_pm_select_sleep_state(&pdev->dev);
 
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
 	ret = register_netdev(ndev);
-	if (ret)
+	if (ret){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		goto failed_register;
+	}
 
 	if (!fep->fixed_link) {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fep->fixups = of_fec_enet_parse_fixup(np);
 		fec_enet_register_fixup(ndev);
 	}
+
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	device_init_wakeup(&ndev->dev, fep->wol_flag &
 			   FEC_WOL_HAS_MAGIC_PACKET);
@@ -3835,37 +3970,65 @@ fec_probe(struct platform_device *pdev)
 	if (fep->bufdesc_ex && fep->ptp_clock)
 		netdev_info(ndev, "registered PHC device %d\n", fep->dev_id);
 
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
 	fep->rx_copybreak = COPYBREAK_DEFAULT;
 	INIT_WORK(&fep->tx_timeout_work, fec_enet_timeout_work);
 
 	pm_runtime_mark_last_busy(&pdev->dev);
 	pm_runtime_put_autosuspend(&pdev->dev);
 
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
 	return 0;
 
 failed_register:
+dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	fec_enet_mii_remove(fep);
 failed_mii_init:
+dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 failed_irq:
+dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 failed_init:
+dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	fec_ptp_stop(pdev);
 	if (fep->reg_phy)
 		regulator_disable(fep->reg_phy);
 failed_reset:
+dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	pm_runtime_disable(&pdev->dev);
 failed_regulator:
+dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	clk_disable_unprepare(fep->clk_ahb);
 failed_clk_ahb:
+dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	clk_disable_unprepare(fep->clk_ipg);
 failed_clk_ipg:
+dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	fec_enet_clk_enable(ndev, false);
 failed_clk:
+dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	if (of_phy_is_fixed_link(np))
 		of_phy_deregister_fixed_link(np);
 	of_node_put(phy_node);
 failed_phy:
+dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	dev_id--;
 failed_ioremap:
+dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	free_netdev(ndev);
 
 	return ret;
