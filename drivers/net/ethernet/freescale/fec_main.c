@@ -2098,8 +2098,12 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 			fep->mii_bus = fec0_mii_bus;
 			*fec_mii_bus_share = FEC0_MII_BUS_SHARE_TRUE;
 			mii_cnt++;
+			dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 			return 0;
 		}
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		return -ENOENT;
 	}
 
@@ -2148,6 +2152,9 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 		goto err_out;
 	}
 
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
 	fep->mii_bus->name = "fec_enet_mii_bus";
 	fep->mii_bus->read = fec_enet_mdio_read;
 	fep->mii_bus->write = fec_enet_mdio_write;
@@ -2158,7 +2165,11 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 
 	node = of_get_child_by_name(pdev->dev.of_node, "mdio");
 	if (node) {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		err = of_mdiobus_register(fep->mii_bus, node);
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		of_node_put(node);
 	} else if (fep->phy_node && !fep->fixed_link) {
 		err = -EPROBE_DEFER;
@@ -2177,11 +2188,18 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 		fec_mii_bus_share = &fep->mii_bus_share;
 	}
 
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
 	return 0;
 
 err_out_free_mdiobus:
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	mdiobus_free(fep->mii_bus);
 err_out:
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, err);
 	return err;
 }
 
