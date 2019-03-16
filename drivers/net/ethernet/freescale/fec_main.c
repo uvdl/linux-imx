@@ -2177,6 +2177,22 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 		err = mdiobus_register(fep->mii_bus);
 	}
 
+	/* Empirical evidence shows that the SPI bus was detected named 'sw.0' */
+	if (err) {
+		node = of_get_child_by_name(pdev->dev.of_node, "sw.0");
+		if (node) {
+			dev_err(&pdev->dev,
+					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+			err = of_mdiobus_register(fep->mii_bus, node);
+			dev_err(&pdev->dev,
+					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+			of_node_put(node);
+		} else {
+			dev_err(&pdev->dev,
+					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+		}
+	}
+
 	if (err)
 		goto err_out_free_mdiobus;
 

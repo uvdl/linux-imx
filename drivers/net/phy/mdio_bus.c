@@ -334,13 +334,15 @@ int __mdiobus_register(struct mii_bus *bus, struct module *owner)
 		if ((bus->phy_mask & (1 << i)) == 0) {
 			struct phy_device *phydev;
 
-			pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s, i = %d\n", __FILE__, __FUNCTION__, __LINE__, bus->id, i);
-
 			phydev = mdiobus_scan(bus, i);
 			if (IS_ERR(phydev) && (PTR_ERR(phydev) != -ENODEV)) {
 				err = PTR_ERR(phydev);
 				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->id);
 				goto error;
+			} else if (IS_ERR(phydev) && (PTR_ERR(phydev) == -ENODEV)) {
+				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s, i = %d (ENODEV)\n", __FILE__, __FUNCTION__, __LINE__, bus->id, i);
+			} else {
+				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s, i = %d, dev = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->id, i, phydev->drv->name ? phydev->drv->name : "(null)");
 			}
 		}
 	}
