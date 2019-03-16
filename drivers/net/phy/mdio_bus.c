@@ -316,7 +316,7 @@ int __mdiobus_register(struct mii_bus *bus, struct module *owner)
 	bus->dev.groups = NULL;
 	dev_set_name(&bus->dev, "%s", bus->id);
 
-	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->id);
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->name, bus->id);
 
 	err = device_register(&bus->dev);
 	if (err) {
@@ -337,19 +337,18 @@ int __mdiobus_register(struct mii_bus *bus, struct module *owner)
 			phydev = mdiobus_scan(bus, i);
 			if (IS_ERR(phydev) && (PTR_ERR(phydev) != -ENODEV)) {
 				err = PTR_ERR(phydev);
-				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->id);
+				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->name);
 				goto error;
 			} else if (IS_ERR(phydev) && (PTR_ERR(phydev) == -ENODEV)) {
-				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s, i = %d (ENODEV)\n", __FILE__, __FUNCTION__, __LINE__, bus->id, i);
+				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, i = %d (ENODEV)\n", __FILE__, __FUNCTION__, __LINE__, bus->name, i);
 			} else {
-				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s, i = %d, dev = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->id, i, phydev->drv->name ? phydev->drv->name : "(null)");
+				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, i = %d, dev = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->name, i, phydev->drv->name ? phydev->drv->name : "(null)");
 			}
 		}
 	}
 
 	bus->state = MDIOBUS_REGISTERED;
-	/*pr_info("%s: probed\n", bus->name);*/
-	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->id);
+	pr_info("%s: probed\n", bus->name);
 	return 0;
 
 error:
