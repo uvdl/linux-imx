@@ -211,8 +211,10 @@ int of_mdiobus_register(struct mii_bus *mdio, struct device_node *np)
 	int addr, rc;
 
 	/* Do not continue if the node is disabled */
-	if (!of_device_is_available(np))
+	if (!of_device_is_available(np)) {
+		pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name);
 		return -ENODEV;
+	}
 
 	/* Mask out all PHYs from auto probing.  Instead the PHYs listed in
 	 * the device tree are populated after the bus has been registered */
@@ -222,46 +224,60 @@ int of_mdiobus_register(struct mii_bus *mdio, struct device_node *np)
 
 	/* Register the MDIO bus */
 	rc = mdiobus_register(mdio);
-	if (rc)
+	if (rc) {
+		pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, rc);
 		return rc;
+	}
 
 	/* Loop over the child nodes and register a phy_device for each phy */
 	for_each_available_child_of_node(np, child) {
 		addr = of_mdio_parse_addr(&mdio->dev, child);
 		if (addr < 0) {
+			pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name);
 			scanphys = true;
 			continue;
 		}
 
-		if (of_mdiobus_child_is_phy(child))
+		if (of_mdiobus_child_is_phy(child)) {
+			pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name);
 			of_mdiobus_register_phy(mdio, child, addr);
-		else
+		} else {
+			pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name);
 			of_mdiobus_register_device(mdio, child, addr);
+		}
 	}
 
-	if (!scanphys)
+	if (!scanphys) {
+		pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name);
 		return 0;
+	}
 
 	/* auto scan for PHYs with empty reg property */
 	for_each_available_child_of_node(np, child) {
 		/* Skip PHYs with reg property set */
-		if (of_find_property(child, "reg", NULL))
+		if (of_find_property(child, "reg", NULL)) {
+			pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name);
 			continue;
+		}
 
 		for (addr = 0; addr < PHY_MAX_ADDR; addr++) {
 			/* skip already registered PHYs */
-			if (mdiobus_is_registered_device(mdio, addr))
+			if (mdiobus_is_registered_device(mdio, addr)) {
+				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name);
 				continue;
+			}
 
 			/* be noisy to encourage people to set reg property */
 			dev_info(&mdio->dev, "scan phy %s at address %i\n",
 				 child->name, addr);
 
-			if (of_mdiobus_child_is_phy(child))
+			if (of_mdiobus_child_is_phy(child)) {
+				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name);
 				of_mdiobus_register_phy(mdio, child, addr);
+			}
 		}
 	}
-
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name);
 	return 0;
 }
 EXPORT_SYMBOL(of_mdiobus_register);

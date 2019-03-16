@@ -316,6 +316,8 @@ int __mdiobus_register(struct mii_bus *bus, struct module *owner)
 	bus->dev.groups = NULL;
 	dev_set_name(&bus->dev, "%s", bus->id);
 
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->id);
+
 	err = device_register(&bus->dev);
 	if (err) {
 		pr_err("mii_bus %s failed to register\n", bus->id);
@@ -332,16 +334,20 @@ int __mdiobus_register(struct mii_bus *bus, struct module *owner)
 		if ((bus->phy_mask & (1 << i)) == 0) {
 			struct phy_device *phydev;
 
+			pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s, i = %d\n", __FILE__, __FUNCTION__, __LINE__, bus->id, i);
+
 			phydev = mdiobus_scan(bus, i);
 			if (IS_ERR(phydev) && (PTR_ERR(phydev) != -ENODEV)) {
 				err = PTR_ERR(phydev);
+				pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->id);
 				goto error;
 			}
 		}
 	}
 
 	bus->state = MDIOBUS_REGISTERED;
-	pr_info("%s: probed\n", bus->name);
+	/*pr_info("%s: probed\n", bus->name);*/
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus->id);
 	return 0;
 
 error:
@@ -354,6 +360,7 @@ error:
 		mdiodev->device_free(mdiodev);
 	}
 	device_del(&bus->dev);
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- id = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, bus->id, err);
 	return err;
 }
 EXPORT_SYMBOL(__mdiobus_register);

@@ -39,7 +39,7 @@ static inline int of_mdiobus_register(struct mii_bus *mdio, struct device_node *
 	 * Fall back to the non-DT function to register a bus.
 	 * This way, we don't have to keep compat bits around in drivers.
 	 */
-
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, node = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, np->name ? np->name : "(null)");
 	return mdiobus_register(mdio);
 }
 
