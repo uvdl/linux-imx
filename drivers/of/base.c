@@ -762,7 +762,7 @@ struct device_node *of_get_child_by_name(const struct device_node *node,
 		} else {
 			pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- parent = %s, child = %s <> %s\n", __FILE__, __FUNCTION__, __LINE__, node->name, child->name, name);
 		}
-	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- parent = %s, child = %s\n", __FILE__, __FUNCTION__, __LINE__, node->name, child->name if child else "(null)");
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- parent = %s, child = %s\n", __FILE__, __FUNCTION__, __LINE__, node->name, child ? child->name : "(null)");
 	return child;
 }
 EXPORT_SYMBOL(of_get_child_by_name);
