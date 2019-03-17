@@ -2183,25 +2183,6 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	}
 
-	/* try ecspi1 instead of the others... */
-	node = of_get_child_by_name(pdev->dev.of_node, "ecspi1");
-	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, node(ecspi1) = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, node ? node->name : "(null)");
-	if (node) {
-		err = of_mdiobus_register(fep->mii_bus, node);
-		dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-		of_node_put(node);
-	} else if (fep->phy_node && !fep->fixed_link) {
-		err = -EPROBE_DEFER;
-		dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-	} else {
-		err = mdiobus_register(fep->mii_bus);
-		dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-	}
-
 	if (err)
 		goto err_out_free_mdiobus;
 
@@ -3975,6 +3956,8 @@ fec_probe(struct platform_device *pdev)
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		fep->quirks |= FEC_QUIRK_SINGLE_MDIO;
 	}
+	/* https://community.nxp.com/thread/475434 */
+	mdelay(100)
 	ret = fec_enet_mii_init(pdev);
 	if (ret){
 		dev_err(&pdev->dev,
