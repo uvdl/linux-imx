@@ -2164,6 +2164,8 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 	fep->mii_bus->parent = &pdev->dev;
 
 	node = of_get_child_by_name(pdev->dev.of_node, "mdio");
+	dev_err(&pdev->dev,
+					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, node(mdio) = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, node->name if node else "(null)");
 	if (node) {
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
@@ -2180,6 +2182,26 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 	/* Empirical evidence shows that the SPI bus was detected named 'sw.0' */
 	if (err) {
 		node = of_get_child_by_name(pdev->dev.of_node, "sw.0");
+		dev_err(&pdev->dev,
+					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, node(sw.0) = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, node->name if node else "(null)");
+		if (node) {
+			dev_err(&pdev->dev,
+					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+			err = of_mdiobus_register(fep->mii_bus, node);
+			dev_err(&pdev->dev,
+					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+			of_node_put(node);
+		} else {
+			dev_err(&pdev->dev,
+					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+		}
+	}
+
+	/* But it also shows that it might have been looking for fixed-link */
+	if (err) {
+		node = of_get_child_by_name(pdev->dev.of_node, "fixed-link");
+		dev_err(&pdev->dev,
+					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, node(fixed-link) = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, node->name if node else "(null)");
 		if (node) {
 			dev_err(&pdev->dev,
 					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);

@@ -754,13 +754,15 @@ struct device_node *of_get_child_by_name(const struct device_node *node,
 {
 	struct device_node *child;
 
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- parent = %s\n", __FILE__, __FUNCTION__, __LINE__, node->name);
 	for_each_child_of_node(node, child)
 		if (child->name && (of_node_cmp(child->name, name) == 0)) {
 			pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- parent = %s, child = %s - MATCH\n", __FILE__, __FUNCTION__, __LINE__, node->name, child->name);
 			break;
 		} else {
-			pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- parent = %s, child = %s\n", __FILE__, __FUNCTION__, __LINE__, node->name, child->name);
+			pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- parent = %s, child = %s <> %s\n", __FILE__, __FUNCTION__, __LINE__, node->name, child->name, name);
 		}
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- parent = %s, child = %s\n", __FILE__, __FUNCTION__, __LINE__, node->name, child->name if child else "(null)");
 	return child;
 }
 EXPORT_SYMBOL(of_get_child_by_name);
