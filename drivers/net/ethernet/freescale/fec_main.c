@@ -2015,8 +2015,10 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 		phy_dev = of_phy_connect(ndev, fep->phy_node,
 					 &fec_enet_adjust_link, 0,
 					 fep->phy_interface);
-		if (!phy_dev)
+		if (!phy_dev) {
+			netdev_err(ndev, "Unable to connect to phy\n");
 			return -ENODEV;
+		}
 	} else {
 		/* check for attached phy */
 		for (phy_id = 0; (phy_id < PHY_MAX_ADDR); phy_id++) {
@@ -2122,7 +2124,7 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 		mii_speed--;
 	if (mii_speed > 63) {
 		dev_err(&pdev->dev,
-			"fec clock (%lu) to fast to get right mii speed\n",
+			"fec clock (%lu) too fast to get right mii speed\n",
 			clk_get_rate(fep->clk_ipg));
 		err = -EINVAL;
 		goto err_out;
@@ -2167,52 +2169,37 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, node(mdio) = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, node ? node->name : "(null)");
 	if (node) {
-		dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		err = of_mdiobus_register(fep->mii_bus, node);
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		of_node_put(node);
 	} else if (fep->phy_node && !fep->fixed_link) {
 		err = -EPROBE_DEFER;
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	} else {
 		err = mdiobus_register(fep->mii_bus);
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	}
 
-	/* Empirical evidence shows that the SPI bus was detected named 'sw.0' */
-	if (err) {
-		node = of_get_child_by_name(pdev->dev.of_node, "sw.0");
+	/* try ecspi1 instead of the others... */
+	node = of_get_child_by_name(pdev->dev.of_node, "ecspi1");
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, node(ecspi1) = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, node ? node->name : "(null)");
+	if (node) {
+		err = of_mdiobus_register(fep->mii_bus, node);
 		dev_err(&pdev->dev,
-					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, node(sw.0) = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, node ? node->name : "(null)");
-		if (node) {
-			dev_err(&pdev->dev,
-					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-			err = of_mdiobus_register(fep->mii_bus, node);
-			dev_err(&pdev->dev,
-					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-			of_node_put(node);
-		} else {
-			dev_err(&pdev->dev,
-					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-		}
-	}
-
-	/* But it also shows that it might have been looking for fixed-link */
-	if (err) {
-		node = of_get_child_by_name(pdev->dev.of_node, "fixed-link");
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+		of_node_put(node);
+	} else if (fep->phy_node && !fep->fixed_link) {
+		err = -EPROBE_DEFER;
 		dev_err(&pdev->dev,
-					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, node(fixed-link) = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, node ? node->name : "(null)");
-		if (node) {
-			dev_err(&pdev->dev,
-					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-			err = of_mdiobus_register(fep->mii_bus, node);
-			dev_err(&pdev->dev,
-					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-			of_node_put(node);
-		} else {
-			dev_err(&pdev->dev,
-					">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-		}
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+	} else {
+		err = mdiobus_register(fep->mii_bus);
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	}
 
 	if (err)
@@ -3251,7 +3238,7 @@ static void set_multicast_list(struct net_device *ndev)
 		}
 
 		/* only upper 6 bits (FEC_HASH_BITS) are used
-		 * which point to specific bit in he hash registers
+		 * which point to specific bit in the hash registers
 		 */
 		hash = (crc >> (32 - FEC_HASH_BITS)) & 0x3f;
 
