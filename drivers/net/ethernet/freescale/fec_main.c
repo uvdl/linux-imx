@@ -3957,7 +3957,7 @@ fec_probe(struct platform_device *pdev)
 		fep->quirks |= FEC_QUIRK_SINGLE_MDIO;
 	}
 	/* https://community.nxp.com/thread/475434 */
-	mdelay(100)
+	mdelay(100);
 	ret = fec_enet_mii_init(pdev);
 	if (ret){
 		dev_err(&pdev->dev,
