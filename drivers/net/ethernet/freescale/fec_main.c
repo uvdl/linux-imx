@@ -3762,9 +3762,10 @@ fec_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	}
-	fep->phy_node = phy_node;
+	//fep->phy_node = phy_node;
+	fep->phy_node = NULL;
 	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s (phy_node set to NULL)\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	ret = of_get_phy_mode(pdev->dev.of_node);
 	if (ret < 0) {
