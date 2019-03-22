@@ -2018,11 +2018,10 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 					 &fec_enet_adjust_link, 0,
 					 fep->phy_interface);
 		dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s, mdio = %s, attached_dev = %s\n",
-				__FILE__, __FUNCTION__, __LINE__, ndev->name,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s, mdio = %s, attached_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name,
 				phy_dev ? phy_dev->drv->name : "(null)",
-				phy_dev ? (phy_dev->mdio ? phy_dev->mdio->drv->name : "(null)") : "(n/a)",
-				phy_dev ? (phy_dev->attached_dev ? phy_dev->attached_dev->drv->name : "(null)") : "(n/a)",
+				phy_dev ? (phy_dev->mdio ? phy_dev->mdio.dev->name : "(null)") : "(n/a)",
+				phy_dev ? (phy_dev->attached_dev ? phy_dev->attached_dev->dev->name : "(null)") : "(n/a)"
 				);
 		if (!phy_dev) {
 			netdev_err(ndev, "Unable to connect to phy\n");
