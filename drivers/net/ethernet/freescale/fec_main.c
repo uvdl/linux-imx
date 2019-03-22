@@ -2018,7 +2018,12 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 					 &fec_enet_adjust_link, 0,
 					 fep->phy_interface);
 		dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_dev ? phy_dev->name : "(null)");
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s, mdio = %s, attached_dev = %s\n",
+				__FILE__, __FUNCTION__, __LINE__, ndev->name,
+				phy_dev ? phy_dev->drv->name : "(null)",
+				phy_dev ? (phy_dev->mdio ? phy_dev->mdio->drv->name : "(null)") : "(n/a)",
+				phy_dev ? (phy_dev->attached_dev ? phy_dev->attached_dev->drv->name : "(null)") : "(n/a)",
+				);
 		if (!phy_dev) {
 			netdev_err(ndev, "Unable to connect to phy\n");
 			return -ENODEV;
@@ -2046,7 +2051,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 		}
 
 		dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mdio_bus_id = %d\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, mdio_bus_id);
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mdio_bus_id = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, mdio_bus_id);
 
 		snprintf(phy_name, sizeof(phy_name),
 			 PHY_ID_FMT, mdio_bus_id, phy_id);
@@ -2055,7 +2060,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	}
 
 	dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s, err= %d\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_dev->name, IS_ERR(phy_dev));
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s, err= %d\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_dev->drv->name, IS_ERR(phy_dev));
 
 	if (IS_ERR(phy_dev)) {
 		netdev_err(ndev, "could not attach to PHY\n");
@@ -2081,7 +2086,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	phy_attached_info(phy_dev);
 
 	dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_dev->name);
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_dev->drv->name);
 	return 0;
 }
 
@@ -4013,7 +4018,11 @@ fec_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		ret = ksz_fec_enet_mii_init(pdev);
-    } else
+	} else {
+		ret = fec_enet_mii_init(pdev);
+	}
+#else
+	ret = fec_enet_mii_init(pdev);
 #endif  /* CONFIG_HAVE_KSZ9897 */
 	ret = fec_enet_mii_init(pdev);
 	if (ret){
