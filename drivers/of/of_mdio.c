@@ -335,12 +335,15 @@ struct phy_device *of_phy_connect(struct net_device *dev,
 	struct phy_device *phy = of_phy_find_device(phy_np);
 	int ret;
 
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- device_node = %s, name = %s\n", __FILE__, __FUNCTION__, __LINE__, phy_np, phy ? phy->drv->name : "(null)");
 	if (!phy)
 		return NULL;
 
 	phy->dev_flags = flags;
 
 	ret = phy_connect_direct(dev, phy, hndlr, iface);
+
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- device_node = %s, name = %s, ret = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_np, phy->drv->name, ret);
 
 	/* refcount is held by phy_connect_direct() on success */
 	put_device(&phy->mdio.dev);
