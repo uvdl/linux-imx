@@ -1841,6 +1841,7 @@ static void fec_enet_adjust_link(struct net_device *ndev)
 		phy_print_status(phy_dev);
 }
 
+#ifndef CONFIG_HAVE_KSZ9897
 static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 {
 	struct fec_enet_private *fep = bus->priv;
@@ -1920,6 +1921,7 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 
 	return ret;
 }
+#endif /* CONFIG_HAVE_KSZ9897 */
 
 static int fec_enet_clk_enable(struct net_device *ndev, bool enable)
 {
@@ -2068,6 +2070,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	return 0;
 }
 
+#ifndef CONFIG_HAVE_KSZ9897
 static int fec_enet_mii_init(struct platform_device *pdev)
 {
 	static struct mii_bus *fec0_mii_bus;
@@ -2208,6 +2211,7 @@ err_out:
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, err);
 	return err;
 }
+#endif /* CONFIG_HAVE_KSZ9897 */
 
 static void fec_enet_mii_remove(struct fec_enet_private *fep)
 {
@@ -2216,6 +2220,37 @@ static void fec_enet_mii_remove(struct fec_enet_private *fep)
 		mdiobus_free(fep->mii_bus);
 	}
 }
+
+#ifdef CONFIG_HAVE_KSZ9897
+// #include <ksz_cfg_9897.h>
+static int ksz_fec_enet_mii_init(struct platform_device *pdev)
+{
+	struct net_device *ndev = platform_get_drvdata(pdev);
+	struct fec_enet_private *fep = netdev_priv(ndev);
+	int phy_mode;
+	char phy_id[MII_BUS_ID_SIZE];
+	char bus_id[MII_BUS_ID_SIZE];
+	struct phy_device *phydev;
+	int phy_addr;
+
+
+	phy_mode = fep->phy_interface;
+	phy_addr = 0; // Lets assume phy_addr is 0 (we should get it from SW)
+
+	snprintf(bus_id, MII_BUS_ID_SIZE, "sw.%d", 0);
+	snprintf(phy_id, MII_BUS_ID_SIZE, PHY_ID_FMT, bus_id, phy_addr);
+	phydev = phy_attach(ndev, phy_id, phy_mode);
+
+	if (IS_ERR(phydev)){
+		dev_err(&pdev->dev,"Could not get SW\n");
+		return -EINVAL;
+	}
+		
+	fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
+
+	return 0;
+}
+#endif /* CONFIG_HAVE_KSZ9897 */
 
 static void fec_enet_get_drvinfo(struct net_device *ndev,
 				 struct ethtool_drvinfo *info)
@@ -3958,7 +3993,12 @@ fec_probe(struct platform_device *pdev)
 	}
 	/* https://community.nxp.com/thread/475434 */
 	mdelay(100);
+
+#ifdef CONFIG_HAVE_KSZ9897
+	ret = ksz_fec_enet_mii_init(pdev);
+#else
 	ret = fec_enet_mii_init(pdev);
+#endif
 	if (ret){
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
