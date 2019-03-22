@@ -198,11 +198,11 @@ static void __init imx6q_enet_phy_init(void)
 
 static void __init imx6q_1588_init(void)
 {
-	pr_err(">>>>>>>> %s -> (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 	struct device_node *np;
 	struct clk *ptp_clk;
 	struct regmap *gpr;
 
+	pr_err(">>>>>>>> %s -> (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 	np = of_find_compatible_node(NULL, NULL, "fsl,imx6q-fec");
 	if (!np) {
 		pr_warn("%s: failed to find fec node\n", __func__);
