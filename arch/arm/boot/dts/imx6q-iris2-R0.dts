@@ -84,7 +84,12 @@
 	phy-reset-post-delay = <100>;
 	phy-supply = <&reg_usb_otg_vbus>;
 	fsl,magic-packet;
+	have-ksz9897;
 	status = "okay";
+	fixed-link {
+		speed = <1000>;
+		full-duplex;
+	};
 };
 
 &ldb {

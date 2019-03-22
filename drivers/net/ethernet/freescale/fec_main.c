@@ -1841,7 +1841,6 @@ static void fec_enet_adjust_link(struct net_device *ndev)
 		phy_print_status(phy_dev);
 }
 
-#ifndef CONFIG_HAVE_KSZ9897
 static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 {
 	struct fec_enet_private *fep = bus->priv;
@@ -1921,7 +1920,6 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 
 	return ret;
 }
-#endif /* CONFIG_HAVE_KSZ9897 */
 
 static int fec_enet_clk_enable(struct net_device *ndev, bool enable)
 {
@@ -2013,10 +2011,14 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	int phy_id;
 	int dev_id = fep->dev_id;
 
+	dev_err(&ndev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_node = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, fep->phy_node ? fep->phy_node->name : "(null)");
 	if (fep->phy_node) {
 		phy_dev = of_phy_connect(ndev, fep->phy_node,
 					 &fec_enet_adjust_link, 0,
 					 fep->phy_interface);
+		dev_err(&ndev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_dev ? phy_dev->name : "(null)");
 		if (!phy_dev) {
 			netdev_err(ndev, "Unable to connect to phy\n");
 			return -ENODEV;
@@ -2024,10 +2026,15 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	} else {
 		/* check for attached phy */
 		for (phy_id = 0; (phy_id < PHY_MAX_ADDR); phy_id++) {
-			if (!mdiobus_is_registered_device(fep->mii_bus, phy_id))
+			if (!mdiobus_is_registered_device(fep->mii_bus, phy_id)) {
+				dev_err(&ndev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_id);
 				continue;
-			if (dev_id--)
+			} if (dev_id--) {
+				dev_err(&ndev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_id);
 				continue;
+			}
 			strlcpy(mdio_bus_id, fep->mii_bus->id, MII_BUS_ID_SIZE);
 			break;
 		}
@@ -2038,11 +2045,17 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 			phy_id = 0;
 		}
 
+		dev_err(&ndev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mdio_bus_id = %d\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, mdio_bus_id);
+
 		snprintf(phy_name, sizeof(phy_name),
 			 PHY_ID_FMT, mdio_bus_id, phy_id);
 		phy_dev = phy_connect(ndev, phy_name, &fec_enet_adjust_link,
 				      fep->phy_interface);
 	}
+
+	dev_err(&ndev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s, err= %d\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_dev->name, IS_ERR(phy_dev));
 
 	if (IS_ERR(phy_dev)) {
 		netdev_err(ndev, "could not attach to PHY\n");
@@ -2067,10 +2080,11 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 
 	phy_attached_info(phy_dev);
 
+	dev_err(&ndev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_dev->name);
 	return 0;
 }
 
-#ifndef CONFIG_HAVE_KSZ9897
 static int fec_enet_mii_init(struct platform_device *pdev)
 {
 	static struct mii_bus *fec0_mii_bus;
@@ -2211,7 +2225,6 @@ err_out:
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, err);
 	return err;
 }
-#endif /* CONFIG_HAVE_KSZ9897 */
 
 static void fec_enet_mii_remove(struct fec_enet_private *fep)
 {
@@ -3762,10 +3775,10 @@ fec_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	}
-	//fep->phy_node = phy_node;
-	fep->phy_node = NULL;
+	fep->phy_node = phy_node;
+
 	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s (phy_node set to NULL)\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_node = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, fep->phy_node ? fep->phy_node->name : "(null)");
 
 	ret = of_get_phy_mode(pdev->dev.of_node);
 	if (ret < 0) {
@@ -3996,10 +4009,13 @@ fec_probe(struct platform_device *pdev)
 	mdelay(100);
 
 #ifdef CONFIG_HAVE_KSZ9897
-	ret = ksz_fec_enet_mii_init(pdev);
-#else
+	if (!of_get_property(np, "have-ksz9897", NULL)){
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+		ret = ksz_fec_enet_mii_init(pdev);
+    } else
+#endif  /* CONFIG_HAVE_KSZ9897 */
 	ret = fec_enet_mii_init(pdev);
-#endif
 	if (ret){
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
