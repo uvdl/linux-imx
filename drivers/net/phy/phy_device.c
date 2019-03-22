@@ -1757,7 +1757,11 @@ int phy_driver_register(struct phy_driver *new_driver, struct module *owner)
 	int retval;
 
 	new_driver->mdiodrv.flags |= MDIO_DEVICE_IS_PHY;
-	new_driver->mdiodrv.driver.name = new_driver->name;
+	//new_driver->mdiodrv.driver.name = new_driver->name;
+	if (!strlen(new_driver->mdiodrv.driver.name)) {
+		strncpy(new_driver->mdiodrv.driver.name, new_driver->name,
+			sizeof (new_driver->mdiodrv.driver.name));
+	}
 	new_driver->mdiodrv.driver.bus = &mdio_bus_type;
 	new_driver->mdiodrv.driver.probe = phy_probe;
 	new_driver->mdiodrv.driver.remove = phy_remove;
