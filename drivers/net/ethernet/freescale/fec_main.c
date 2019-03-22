@@ -4023,7 +4023,6 @@ fec_probe(struct platform_device *pdev)
 #else
 	ret = fec_enet_mii_init(pdev);
 #endif  /* CONFIG_HAVE_KSZ9897 */
-	ret = fec_enet_mii_init(pdev);
 	if (ret){
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
