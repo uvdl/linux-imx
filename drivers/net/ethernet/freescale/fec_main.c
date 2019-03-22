@@ -2020,8 +2020,8 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 		dev_err(&ndev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s, mdio = %s, attached_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name,
 				phy_dev ? phy_dev->drv->name : "(null)",
-				phy_dev ? phy_dev->mdio.dev.name : "(n/a)",
-				phy_dev ? (phy_dev->attached_dev ? phy_dev->attached_dev->dev.name : "(null)") : "(n/a)"
+				phy_dev ? phy_dev->mdio.dev.init_name : "(n/a)",
+				phy_dev ? (phy_dev->attached_dev ? phy_dev->attached_dev->dev.init_name : "(null)") : "(n/a)"
 				);
 		if (!phy_dev) {
 			netdev_err(ndev, "Unable to connect to phy\n");
