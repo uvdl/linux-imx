@@ -1841,6 +1841,10 @@ static void fec_enet_adjust_link(struct net_device *ndev)
 		phy_print_status(phy_dev);
 }
 
+#ifdef CONFIG_HAVE_KSZ9897
+static struct mii_bus *ksz9897_mii_bus = NULL;
+#endif	// CONFIG_HAVE_KSZ9897
+
 static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 {
 	struct fec_enet_private *fep = bus->priv;
@@ -1857,10 +1861,8 @@ static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 	reinit_completion(&fep->mdio_done);
 
 #ifdef CONFIG_HAVE_KSZ9897
-	if (bus->parent) {
-		struct mii_bus *bus = bus->parent;
-
-		ret = bus->read(bus, mii_id, regnum);
+	if ksz9897_mii_bus {
+		ret = ksz9897_mii_bus->read(bus, mii_id, regnum);
 		goto out;
 	}
 #endif	// CONFIG_HAVE_KSZ9897
@@ -1910,10 +1912,8 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 	reinit_completion(&fep->mdio_done);
 
 #ifdef CONFIG_HAVE_KSZ9897
-	if (bus->parent) {
-		struct mii_bus *bus = bus->parent;
-
-		ret = bus->write(bus, mii_id, regnum, value);
+	if ksz9897_mii_bus {
+		ret = ksz9897_mii_bus->write(bus, mii_id, regnum, value);
 		goto out2;
 	}
 #endif	// CONFIG_HAVE_KSZ9897
@@ -2277,8 +2277,8 @@ static void fec_enet_mii_remove(struct fec_enet_private *fep)
 // #include <ksz_cfg_9897.h>
 static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 {
-	struct net_device *ndev = platform_get_drvdata(pdev);
-	struct fec_enet_private *fep = netdev_priv(ndev);
+	//struct net_device *ndev = platform_get_drvdata(pdev);
+	//struct fec_enet_private *fep = netdev_priv(ndev);
 	int phy_mode;
 	char phy_id[MII_BUS_ID_SIZE];
 	char bus_id[MII_BUS_ID_SIZE];
@@ -2286,7 +2286,6 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	int phy_addr;
 	int err = -ENXIO;
 	u32 mii_speed, holdtime;
-	struct mii_bus *bus;
 
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
@@ -2307,49 +2306,11 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	}
 
 	//fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
+	ksz9897_mii_bus = phydev->mdio.bus
 
-	// I think this section of code from fec_enet_mii_init() is needed
-	fep->mii_timeout = 0;
-
-	/*
-	 * Set MII speed to 2.5 MHz (= clk_get_rate() / 2 * phy_speed)
-	 *
-	 * The formula for FEC MDC is 'ref_freq / (MII_SPEED x 2)' while
-	 * for ENET-MAC is 'ref_freq / ((MII_SPEED + 1) x 2)'.  The i.MX28
-	 * Reference Manual has an error on this, and gets fixed on i.MX6Q
-	 * document.
-	 */
-	mii_speed = DIV_ROUND_UP(clk_get_rate(fep->clk_ipg), 5000000);
-	if (fep->quirks & FEC_QUIRK_ENET_MAC)
-		mii_speed--;
-	if (mii_speed > 63) {
+	{
+		struct mii_bus *bus = phydev->mdio.bus;
 		dev_err(&pdev->dev,
-			"fec clock (%lu) too fast to get right mii speed\n",
-			clk_get_rate(fep->clk_ipg));
-		return -EINVAL;
-	}
-
-	/*
-	 * The i.MX28 and i.MX6 types have another filed in the MSCR (aka
-	 * MII_SPEED) register that defines the MDIO output hold time. Earlier
-	 * versions are RAZ there, so just ignore the difference and write the
-	 * register always.
-	 * The minimal hold time according to IEE802.3 (clause 22) is 10 ns.
-	 * HOLDTIME + 1 is the number of clk cycles the fec is holding the
-	 * output.
-	 * The HOLDTIME bitfield takes values between 0 and 7 (inclusive).
-	 * Given that ceil(clkrate / 5000000) <= 64, the calculation for
-	 * holdtime cannot result in a value greater than 3.
-	 */
-	holdtime = DIV_ROUND_UP(clk_get_rate(fep->clk_ipg), 100000000) - 1;
-
-	fep->phy_speed = mii_speed << 1 | holdtime << 8;
-
-	writel(fep->phy_speed, fep->hwp + FEC_MII_SPEED);
-
-	bus = phydev->mdio.bus;
-
-	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mii_bus = %s, id = %s (%c%c%c), parent = %s\n",
 				__FILE__, __FUNCTION__, __LINE__, pdev->name,
 				bus->name ? bus->name : "(null)",
@@ -2359,52 +2320,9 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 				bus->write ? 'W' : ' ',
 				bus->parent ? bus->parent->init_name : "(null)"
 				);
-
-	fep->mii_bus = mdiobus_alloc();
-	if (fep->mii_bus == NULL) {
-		err = -ENOMEM;
-		goto err_out;
 	}
 
-	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-
-	fep->mii_bus->name = "fec_enet_mii_bus";
-	fep->mii_bus->read = fec_enet_mdio_read;
-	fep->mii_bus->write = fec_enet_mdio_write;
-	snprintf(fep->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
-		pdev->name, fep->dev_id + 1);
-	fep->mii_bus->priv = fep;
-	fep->mii_bus->parent = bus;
-
-	err = mdiobus_register(fep->mii_bus);
-	dev_err(&pdev->dev,
-			">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-
-	if (err)
-		goto err_out_free_mdiobus;
-
-	mii_cnt++;
-
-	/* save fec0 mii_bus */
-	if (fep->quirks & FEC_QUIRK_SINGLE_MDIO) {
-		fec0_mii_bus = fep->mii_bus;
-		fec_mii_bus_share = &fep->mii_bus_share;
-	}
-
-	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-
-	return 0;
-
-err_out_free_mdiobus:
-	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-	mdiobus_free(fep->mii_bus);
-err_out:
-	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, err);
-	return err;
+	return fec_enet_mii_init(pdev);
 }
 #endif /* CONFIG_HAVE_KSZ9897 */
 
