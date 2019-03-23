@@ -18116,27 +18116,34 @@ dbg_msg("port: %x %x %x\n", sw->port_cnt, sw->mib_port_cnt, sw->phy_port_cnt);
 			*data_hi &= ~(PORT_RGMII_ID_IG_ENABLE |
 				PORT_RGMII_ID_EG_ENABLE);
 #ifdef USE_10_MBIT_MODE
+		dev_info(ks->dev, "USE_10_MBIT_MODE");
 		*data_lo &= ~PORT_MII_100MBIT;
 #endif
 #ifdef USE_HALF_DUPLEX
+		dev_info(ks->dev, "USE_HALF_DUPLEX");
 		*data_lo &= ~PORT_MII_FULL_DUPLEX;
 #endif
 #ifdef USE_RGMII_MODE
+		dev_info(ks->dev, "USE_RGMII_MODE");
 		sw_set_gbit(sw, true, data_hi);
 		sw_set_xmii(sw, 3, data_hi);
 #endif
 #ifdef USE_MII_MODE
+		dev_info(ks->dev, "USE_MII_MODE");
 		sw_set_gbit(sw, false, data_hi);
 		sw_set_xmii(sw, 0, data_hi);
 #endif
 #ifdef USE_GMII_MODE
+		dev_info(ks->dev, "USE_GMII_MODE");
 		sw_set_gbit(sw, true, data_hi);
 		sw_set_xmii(sw, 2, data_hi);
 #endif
 #ifdef USE_GMII_100_MODE
+		dev_info(ks->dev, "USE_GMII_100_MODE");
 		sw_set_gbit(sw, false, data_hi);
 #endif
 #ifdef USE_RMII_MODE
+		dev_info(ks->dev, "USE_RMII_MODE");
 		sw_set_gbit(sw, false, data_hi);
 		sw_set_xmii(sw, 1, data_hi);
 #endif

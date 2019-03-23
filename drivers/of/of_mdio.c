@@ -218,6 +218,8 @@ int of_mdiobus_register(struct mii_bus *mdio, struct device_node *np)
 	bool scanphys = false;
 	int addr, rc;
 
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name);
+
 	/* Do not continue if the node is disabled */
 	if (!of_device_is_available(np)) {
 		pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name);
@@ -343,7 +345,7 @@ struct phy_device *of_phy_connect(struct net_device *dev,
 	struct phy_device *phy = of_phy_find_device(phy_np);
 	int ret;
 
-	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- device_node = %s, name = %s\n", __FILE__, __FUNCTION__, __LINE__, phy_np->name, phy ? phy->drv->name : "(null)");
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- device_node = %s, name = %s\n", __FILE__, __FUNCTION__, __LINE__, phy_np->name, phy ? (phy->drv ? phy->drv->name : "(nodrv)") : "(null)");
 	if (!phy)
 		return NULL;
 
@@ -351,7 +353,7 @@ struct phy_device *of_phy_connect(struct net_device *dev,
 
 	ret = phy_connect_direct(dev, phy, hndlr, iface);
 
-	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- device_node = %s, name = %s, ret = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_np->name, phy->drv->name, ret);
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- device_node = %s, name = %s, ret = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_np->name, phy->drv ? phy->drv->name : "(nodrv)", ret);
 
 	/* refcount is held by phy_connect_direct() on success */
 	put_device(&phy->mdio.dev);
