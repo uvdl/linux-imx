@@ -1861,7 +1861,7 @@ static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 	reinit_completion(&fep->mdio_done);
 
 #ifdef CONFIG_HAVE_KSZ9897
-	if ksz9897_mii_bus {
+	if (ksz9897_mii_bus) {
 		ret = ksz9897_mii_bus->read(bus, mii_id, regnum);
 		goto out;
 	}
@@ -1912,7 +1912,7 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 	reinit_completion(&fep->mdio_done);
 
 #ifdef CONFIG_HAVE_KSZ9897
-	if ksz9897_mii_bus {
+	if (ksz9897_mii_bus) {
 		ret = ksz9897_mii_bus->write(bus, mii_id, regnum, value);
 		goto out2;
 	}
@@ -2275,11 +2275,11 @@ static void fec_enet_mii_remove(struct fec_enet_private *fep)
 
 #ifdef CONFIG_HAVE_KSZ9897
 // #include <ksz_cfg_9897.h>
-static int ksz_fec_enet_mii_init(struct platform_device *pdev)
+static int ksz_fec_enet_mii_init(struct platform_device *pdev, int phy_mode)
 {
 	//struct net_device *ndev = platform_get_drvdata(pdev);
 	//struct fec_enet_private *fep = netdev_priv(ndev);
-	int phy_mode;
+	//int phy_mode;
 	char phy_id[MII_BUS_ID_SIZE];
 	char bus_id[MII_BUS_ID_SIZE];
 	struct phy_device *phydev;
@@ -2290,7 +2290,7 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
-	phy_mode = fep->phy_interface;
+	//phy_mode = fep->phy_interface;
 	phy_addr = 0; // Lets assume phy_addr is 0 (we should get it from SW)
 
 	snprintf(bus_id, MII_BUS_ID_SIZE, "sw.%d", 0);
@@ -4073,7 +4073,7 @@ fec_probe(struct platform_device *pdev)
 	if (of_get_property(np, "have-ksz9897", NULL)){
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-		ret = ksz_fec_enet_mii_init(pdev);
+		ret = ksz_fec_enet_mii_init(pdev, fep->phy_interface);
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, ret = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, ret);
 
