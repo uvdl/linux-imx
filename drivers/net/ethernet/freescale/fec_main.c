@@ -2251,6 +2251,7 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	char bus_id[MII_BUS_ID_SIZE];
 	struct phy_device *phydev;
 	int phy_addr;
+	int err = -ENXIO;
 	u32 mii_speed, holdtime;
 
 	dev_err(&ndev->dev,
@@ -2313,19 +2314,28 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	writel(fep->phy_speed, fep->hwp + FEC_MII_SPEED);
 
 	fep->mii_bus = phydev->mdio.bus;
+	fep->mii_bus->parent = &pdev->dev;
+
+	err = mdiobus_register(fep->mii_bus);
 
 	dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mii_bus = %s, id = %s (%c%c%c), parent = %s\n",
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mii_bus = %s, id = %s (%c%c%c%c), parent = %s\n",
 				__FILE__, __FUNCTION__, __LINE__, ndev->name,
 				fep->mii_bus->name ? fep->mii_bus->name : "(null)",
 				fep->mii_bus->id ? fep->mii_bus->id : "(null)",
 				fep->mii_bus->priv ? 'P' : ' ',
 				fep->mii_bus->read ? 'R' : ' ',
 				fep->mii_bus->write ? 'W' : ' ',
-				fep->mii_bus->parent ? (fep->mii_bus->parent->drv ? fep->mii_bus->parent->drv->name : "(nodrv)") : "(null)"
+				err ? 'E' : ' ',
+				fep->mii_bus->parent ? fep->mii_bus->parent->init_name : "(null)"
 				);
 
-	return 0;
+	if (err)
+		mdiobus_free(fep->mii_bus);
+	else
+		mii_cnt++;
+
+	return err;
 }
 #endif /* CONFIG_HAVE_KSZ9897 */
 
@@ -4073,7 +4083,7 @@ fec_probe(struct platform_device *pdev)
 	mdelay(100);
 
 #ifdef CONFIG_HAVE_KSZ9897
-	if (!of_get_property(np, "have-ksz9897", NULL)){
+	if (of_get_property(np, "have-ksz9897", NULL)){
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		ret = ksz_fec_enet_mii_init(pdev);
