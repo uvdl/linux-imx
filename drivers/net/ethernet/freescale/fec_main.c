@@ -2277,15 +2277,13 @@ static void fec_enet_mii_remove(struct fec_enet_private *fep)
 // #include <ksz_cfg_9897.h>
 static int ksz_fec_enet_mii_init(struct platform_device *pdev, int phy_mode)
 {
-	//struct net_device *ndev = platform_get_drvdata(pdev);
+	struct net_device *ndev = platform_get_drvdata(pdev);
 	//struct fec_enet_private *fep = netdev_priv(ndev);
 	//int phy_mode;
 	char phy_id[MII_BUS_ID_SIZE];
 	char bus_id[MII_BUS_ID_SIZE];
 	struct phy_device *phydev;
 	int phy_addr;
-	int err = -ENXIO;
-	u32 mii_speed, holdtime;
 
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
@@ -2298,7 +2296,8 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev, int phy_mode)
 	phydev = phy_attach(ndev, phy_id, phy_mode);
 
 	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phydev = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, phydev ? (phydev->drv ? phydev->drv->name : "(nodrv)") : "(null)");
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phydev = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name,
+				phydev ? (phydev->drv ? phydev->drv->name : "(nodrv)") : "(null)");
 
 	if (IS_ERR(phydev)){
 		dev_err(&pdev->dev,"Could not get SW\n");
@@ -2306,7 +2305,7 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev, int phy_mode)
 	}
 
 	//fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
-	ksz9897_mii_bus = phydev->mdio.bus
+	ksz9897_mii_bus = phydev->mdio.bus;
 
 	{
 		struct mii_bus *bus = phydev->mdio.bus;
