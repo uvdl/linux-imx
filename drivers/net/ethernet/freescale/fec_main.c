@@ -1856,6 +1856,15 @@ static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 	fep->mii_timeout = 0;
 	reinit_completion(&fep->mdio_done);
 
+#ifdef CONFIG_HAVE_KSZ9897
+	if (bus->parent) {
+		struct mii_bus *bus = bus->parent;
+
+		ret = bus->read(bus, mii_id, regnum);
+		goto out;
+	}
+#endif	// CONFIG_HAVE_KSZ9897
+
 	/* start a read op */
 	writel(FEC_MMFR_ST | FEC_MMFR_OP_READ |
 		FEC_MMFR_PA(mii_id) | FEC_MMFR_RA(regnum) |
@@ -1900,6 +1909,15 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 	fep->mii_timeout = 0;
 	reinit_completion(&fep->mdio_done);
 
+#ifdef CONFIG_HAVE_KSZ9897
+	if (bus->parent) {
+		struct mii_bus *bus = bus->parent;
+
+		ret = bus->write(bus, mii_id, regnum, value);
+		goto out2;
+	}
+#endif	// CONFIG_HAVE_KSZ9897
+
 	/* start a write op */
 	writel(FEC_MMFR_ST | FEC_MMFR_OP_WRITE |
 		FEC_MMFR_PA(mii_id) | FEC_MMFR_RA(regnum) |
@@ -1915,6 +1933,7 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 		ret  = -ETIMEDOUT;
 	}
 
+out2:
 	pm_runtime_mark_last_busy(dev);
 	pm_runtime_put_autosuspend(dev);
 
@@ -2188,6 +2207,20 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 	fep->mii_bus->priv = fep;
 	fep->mii_bus->parent = &pdev->dev;
 
+	{
+		struct mii_bus *bus = fep->mii_bus;
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mii_bus = %s, id = %s (%c%c%c), parent = %s\n",
+				__FILE__, __FUNCTION__, __LINE__, pdev->name,
+				bus->name ? bus->name : "(null)",
+				bus->id ? bus->id : "(null)",
+				bus->priv ? 'P' : ' ',
+				bus->read ? 'R' : ' ',
+				bus->write ? 'W' : ' ',
+				bus->parent ? bus->parent->init_name : "(null)"
+				);
+	}
+
 	node = of_get_child_by_name(pdev->dev.of_node, "mdio");
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, node(mdio) = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, node ? node->name : "(null)");
@@ -2253,6 +2286,7 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	int phy_addr;
 	int err = -ENXIO;
 	u32 mii_speed, holdtime;
+	struct mii_bus *bus;
 
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
@@ -2313,21 +2347,64 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 
 	writel(fep->phy_speed, fep->hwp + FEC_MII_SPEED);
 
-	fep->mii_bus = phydev->mdio.bus;
+	bus = phydev->mdio.bus;
 
 	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mii_bus = %s, id = %s (%c%c%c%c), parent = %s\n",
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mii_bus = %s, id = %s (%c%c%c), parent = %s\n",
 				__FILE__, __FUNCTION__, __LINE__, pdev->name,
-				fep->mii_bus->name ? fep->mii_bus->name : "(null)",
-				fep->mii_bus->id ? fep->mii_bus->id : "(null)",
-				fep->mii_bus->priv ? 'P' : ' ',
-				fep->mii_bus->read ? 'R' : ' ',
-				fep->mii_bus->write ? 'W' : ' ',
-				err ? 'E' : ' ',
-				fep->mii_bus->parent ? fep->mii_bus->parent->init_name : "(null)"
+				bus->name ? bus->name : "(null)",
+				bus->id ? bus->id : "(null)",
+				bus->priv ? 'P' : ' ',
+				bus->read ? 'R' : ' ',
+				bus->write ? 'W' : ' ',
+				bus->parent ? bus->parent->init_name : "(null)"
 				);
 
+	fep->mii_bus = mdiobus_alloc();
+	if (fep->mii_bus == NULL) {
+		err = -ENOMEM;
+		goto err_out;
+	}
+
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
+	fep->mii_bus->name = "fec_enet_mii_bus";
+	fep->mii_bus->read = fec_enet_mdio_read;
+	fep->mii_bus->write = fec_enet_mdio_write;
+	snprintf(fep->mii_bus->id, MII_BUS_ID_SIZE, "%s-%x",
+		pdev->name, fep->dev_id + 1);
+	fep->mii_bus->priv = fep;
+	fep->mii_bus->parent = bus;
+
+	err = mdiobus_register(fep->mii_bus);
+	dev_err(&pdev->dev,
+			">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
+	if (err)
+		goto err_out_free_mdiobus;
+
+	mii_cnt++;
+
+	/* save fec0 mii_bus */
+	if (fep->quirks & FEC_QUIRK_SINGLE_MDIO) {
+		fec0_mii_bus = fep->mii_bus;
+		fec_mii_bus_share = &fep->mii_bus_share;
+	}
+
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
 	return 0;
+
+err_out_free_mdiobus:
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+	mdiobus_free(fep->mii_bus);
+err_out:
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, err);
+	return err;
 }
 #endif /* CONFIG_HAVE_KSZ9897 */
 
