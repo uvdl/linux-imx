@@ -57,8 +57,10 @@ static void of_mdiobus_register_phy(struct mii_bus *mdio,
 		phy = phy_device_create(mdio, addr, phy_id, 0, NULL);
 	else
 		phy = get_phy_device(mdio, addr, is_c45);
-	if (IS_ERR(phy))
+	if (IS_ERR(phy)) {
+		dev_err(&mdio->dev, "phy %s not registered\n", child->name);
 		return;
+	}
 
 	rc = irq_of_parse_and_map(child, 0);
 	if (rc > 0) {
@@ -85,7 +87,7 @@ static void of_mdiobus_register_phy(struct mii_bus *mdio,
 		return;
 	}
 
-	dev_dbg(&mdio->dev, "registered phy %s at address %i\n",
+	/*dev_dbg*/dev_info(&mdio->dev, "registered phy %s at address %i\n",
 		child->name, addr);
 }
 
@@ -113,7 +115,7 @@ static void of_mdiobus_register_device(struct mii_bus *mdio,
 		return;
 	}
 
-	dev_dbg(&mdio->dev, "registered mdio device %s at address %i\n",
+	/*dev_dbg*/dev_info(&mdio->dev, "registered mdio device %s at address %i\n",
 		child->name, addr);
 }
 
