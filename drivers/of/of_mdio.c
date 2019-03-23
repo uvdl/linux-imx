@@ -55,14 +55,19 @@ static void of_mdiobus_register_phy(struct mii_bus *mdio,
 	is_c45 = of_device_is_compatible(child,
 					 "ethernet-phy-ieee802.3-c45");
 
-	if (!is_c45 && !of_get_phy_id(child, &phy_id))
+	if (!is_c45 && !of_get_phy_id(child, &phy_id)) {
 		phy = phy_device_create(mdio, addr, phy_id, 0, NULL);
-	else
+		pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- mdio = %s, child = %s, phy = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, child->name, phy ? (phy->drv ? phy->drv->name : "(nodrv)") : "(null)", IS_ERR(phy));
+	} else {
 		phy = get_phy_device(mdio, addr, is_c45);
-	if (IS_ERR(phy))
+		pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- mdio = %s, child = %s, phy = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, child->name, phy ? (phy->drv ? phy->drv->name : "(nodrv)") : "(null)", IS_ERR(phy));
+	}
+	if (IS_ERR(phy)) {
+		dev_err(&mdio->dev, "phy %s not registered\n", child->name);
 		return;
+	}
 
-	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- mdio = %s, child = %s, phy = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, child->name, phy->drv->name);
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- mdio = %s, child = %s, phy = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, child->name, phy ? (phy->drv ? phy->drv->name : "(nodrv)") : "(null)");
 
 	rc = irq_of_parse_and_map(child, 0);
 	if (rc > 0) {

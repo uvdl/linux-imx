@@ -2018,7 +2018,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 					 &fec_enet_adjust_link, 0,
 					 fep->phy_interface);
 		dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s, mdio = %s, attached_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phydev = %s, mdio = %s, attached_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name,
 				phy_dev ? (phy_dev->drv ? phy_dev->drv->name : "(nodrv)") : "(null)",
 				phy_dev ? phy_dev->mdio.dev.init_name : "(n/a)",
 				phy_dev ? (phy_dev->attached_dev ? phy_dev->attached_dev->dev.init_name : "(null)") : "(n/a)"
@@ -2264,7 +2264,7 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	phydev = phy_attach(ndev, phy_id, phy_mode);
 
 	dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phydev->drv->name);
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phydev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phydev ? (phydev->drv ? phydev->drv->name : "(nodrv)") : "(null)");
 
 	if (IS_ERR(phydev)){
 		dev_err(&pdev->dev,"Could not get SW\n");
