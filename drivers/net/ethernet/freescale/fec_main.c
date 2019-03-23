@@ -2322,7 +2322,7 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 				fep->mii_bus->priv ? 'P' : ' ',
 				fep->mii_bus->read ? 'R' : ' ',
 				fep->mii_bus->write ? 'W' : ' ',
-				fep->mii_bus->parent ? fep->mii_bus->parent->name : "(null)"
+				fep->mii_bus->parent ? (fep->mii_bus->parent->drv ? fep->mii_bus->parent->drv->name : "(nodrv)") : "(null)"
 				);
 
 	return 0;
