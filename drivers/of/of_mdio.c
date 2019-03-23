@@ -50,6 +50,8 @@ static void of_mdiobus_register_phy(struct mii_bus *mdio,
 	int rc;
 	u32 phy_id;
 
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- mdio = %s, child = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, child->name);
+
 	is_c45 = of_device_is_compatible(child,
 					 "ethernet-phy-ieee802.3-c45");
 
@@ -59,6 +61,8 @@ static void of_mdiobus_register_phy(struct mii_bus *mdio,
 		phy = get_phy_device(mdio, addr, is_c45);
 	if (IS_ERR(phy))
 		return;
+
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- mdio = %s, child = %s, phy = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, child->name, phy->drv->name);
 
 	rc = irq_of_parse_and_map(child, 0);
 	if (rc > 0) {
@@ -85,7 +89,7 @@ static void of_mdiobus_register_phy(struct mii_bus *mdio,
 		return;
 	}
 
-	dev_dbg(&mdio->dev, "registered phy %s at address %i\n",
+	/*dev_dbg*/dev_err(&mdio->dev, "registered phy %s at address %i\n",
 		child->name, addr);
 }
 
@@ -95,9 +99,13 @@ static void of_mdiobus_register_device(struct mii_bus *mdio,
 	struct mdio_device *mdiodev;
 	int rc;
 
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- mdio = %s, child = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, child->name);
+
 	mdiodev = mdio_device_create(mdio, addr);
 	if (IS_ERR(mdiodev))
 		return;
+
+	pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- mdio = %s, child = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, child->name);
 
 	/* Associate the OF node with the device structure so it
 	 * can be looked up later.
@@ -113,7 +121,7 @@ static void of_mdiobus_register_device(struct mii_bus *mdio,
 		return;
 	}
 
-	dev_dbg(&mdio->dev, "registered mdio device %s at address %i\n",
+	/*dev_dbg*/dev_err(&mdio->dev, "registered mdio device %s at address %i\n",
 		child->name, addr);
 }
 
