@@ -2314,9 +2314,6 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	writel(fep->phy_speed, fep->hwp + FEC_MII_SPEED);
 
 	fep->mii_bus = phydev->mdio.bus;
-	fep->mii_bus->parent = &pdev->dev;
-
-	err = mdiobus_register(fep->mii_bus);
 
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mii_bus = %s, id = %s (%c%c%c%c), parent = %s\n",
@@ -2330,12 +2327,7 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 				fep->mii_bus->parent ? fep->mii_bus->parent->init_name : "(null)"
 				);
 
-	if (err)
-		mdiobus_free(fep->mii_bus);
-	else
-		mii_cnt++;
-
-	return err;
+	return 0;
 }
 #endif /* CONFIG_HAVE_KSZ9897 */
 
@@ -4087,6 +4079,24 @@ fec_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		ret = ksz_fec_enet_mii_init(pdev);
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, ret = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, ret);
+
+		if (ret)
+			goto failed_mii_init;
+
+		fep->mii_bus->parent = &pdev->dev;
+		ret = mdiobus_register(fep->mii_bus);
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, ret = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, ret);
+
+		if (ret) {
+			mdiobus_free(fep->mii_bus);
+			goto failed_mii_init;
+		} else {
+			mii_cnt++;
+		}
+
 	} else {
 		ret = fec_enet_mii_init(pdev);
 	}
