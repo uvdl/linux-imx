@@ -2249,7 +2249,10 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	char bus_id[MII_BUS_ID_SIZE];
 	struct phy_device *phydev;
 	int phy_addr;
+	u32 mii_speed, holdtime;
 
+	dev_err(&ndev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name);
 
 	phy_mode = fep->phy_interface;
 	phy_addr = 0; // Lets assume phy_addr is 0 (we should get it from SW)
@@ -2258,12 +2261,67 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	snprintf(phy_id, MII_BUS_ID_SIZE, PHY_ID_FMT, bus_id, phy_addr);
 	phydev = phy_attach(ndev, phy_id, phy_mode);
 
+	dev_err(&ndev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phydev->drv->name);
+
 	if (IS_ERR(phydev)){
 		dev_err(&pdev->dev,"Could not get SW\n");
 		return -EINVAL;
 	}
-		
-	fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
+
+	//fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
+
+	// I think this section of code from fec_enet_mii_init() is needed
+	fep->mii_timeout = 0;
+
+	/*
+	 * Set MII speed to 2.5 MHz (= clk_get_rate() / 2 * phy_speed)
+	 *
+	 * The formula for FEC MDC is 'ref_freq / (MII_SPEED x 2)' while
+	 * for ENET-MAC is 'ref_freq / ((MII_SPEED + 1) x 2)'.  The i.MX28
+	 * Reference Manual has an error on this, and gets fixed on i.MX6Q
+	 * document.
+	 */
+	mii_speed = DIV_ROUND_UP(clk_get_rate(fep->clk_ipg), 5000000);
+	if (fep->quirks & FEC_QUIRK_ENET_MAC)
+		mii_speed--;
+	if (mii_speed > 63) {
+		dev_err(&pdev->dev,
+			"fec clock (%lu) too fast to get right mii speed\n",
+			clk_get_rate(fep->clk_ipg));
+		return -EINVAL;
+	}
+
+	/*
+	 * The i.MX28 and i.MX6 types have another filed in the MSCR (aka
+	 * MII_SPEED) register that defines the MDIO output hold time. Earlier
+	 * versions are RAZ there, so just ignore the difference and write the
+	 * register always.
+	 * The minimal hold time according to IEE802.3 (clause 22) is 10 ns.
+	 * HOLDTIME + 1 is the number of clk cycles the fec is holding the
+	 * output.
+	 * The HOLDTIME bitfield takes values between 0 and 7 (inclusive).
+	 * Given that ceil(clkrate / 5000000) <= 64, the calculation for
+	 * holdtime cannot result in a value greater than 3.
+	 */
+	holdtime = DIV_ROUND_UP(clk_get_rate(fep->clk_ipg), 100000000) - 1;
+
+	fep->phy_speed = mii_speed << 1 | holdtime << 8;
+
+	writel(fep->phy_speed, fep->hwp + FEC_MII_SPEED);
+
+	fep->mii_bus = phydev->mdio.bus;
+
+	dev_err(&ndev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mii_bus = %s, id = %s (%c%c%c), parent = %s\n",
+				__FILE__, __FUNCTION__, __LINE__, ndev->name,
+				fep->mii_bus->name ? fep->mii_bus->name : "(null)",
+				fep->mii_bus->id ? fep->mii_bus->id : "(null)",
+				fep->mii_bus->priv ? 'P' : ' ',
+				fep->mii_bus->read ? 'R' : ' ',
+				fep->mii_bus->write ? 'W' : ' ',
+				fep->mii_bus->parent ? fep->mii_bus->parent->name : "(null)"
+				);
 
 	return 0;
 }
