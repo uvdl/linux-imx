@@ -2254,8 +2254,8 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	int err = -ENXIO;
 	u32 mii_speed, holdtime;
 
-	dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name);
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	phy_mode = fep->phy_interface;
 	phy_addr = 0; // Lets assume phy_addr is 0 (we should get it from SW)
@@ -2264,8 +2264,8 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	snprintf(phy_id, MII_BUS_ID_SIZE, PHY_ID_FMT, bus_id, phy_addr);
 	phydev = phy_attach(ndev, phy_id, phy_mode);
 
-	dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phydev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phydev ? (phydev->drv ? phydev->drv->name : "(nodrv)") : "(null)");
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phydev = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, phydev ? (phydev->drv ? phydev->drv->name : "(nodrv)") : "(null)");
 
 	if (IS_ERR(phydev)){
 		dev_err(&pdev->dev,"Could not get SW\n");
@@ -2318,9 +2318,9 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 
 	err = mdiobus_register(fep->mii_bus);
 
-	dev_err(&ndev->dev,
+	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mii_bus = %s, id = %s (%c%c%c%c), parent = %s\n",
-				__FILE__, __FUNCTION__, __LINE__, ndev->name,
+				__FILE__, __FUNCTION__, __LINE__, pdev->name,
 				fep->mii_bus->name ? fep->mii_bus->name : "(null)",
 				fep->mii_bus->id ? fep->mii_bus->id : "(null)",
 				fep->mii_bus->priv ? 'P' : ' ',
