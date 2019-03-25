@@ -47,7 +47,7 @@
 		/* J3.3 GPIO_1 */
 		program {
 			label = "Program";
-			gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio1 1 1>;
 			linux,code = <KEY_PROGRAM>;
 			gpio-key,wakeup;
 		};
