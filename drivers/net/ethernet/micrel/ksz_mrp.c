@@ -32,19 +32,18 @@ static int dbg_mrp_vlan = 1;
 #endif
 
 #if 1
-static int ba_hack = false;
-static int mrp_10_1_2f_hack = false;
-static int mrp_10_1_8a_hack = false;
-static int mrp_10_5_1_hack = false;
-static int mrp_10_5_1c_hack = false;
-static int mrp_10_5_1d_hack = false;
-static int msrp_35_1_14g_hack = false;
-static int fqtss_hack = false;
-static int fqtss_34_2_3_hack = false;
-static int fqtss_34_2_1b_hack = false;
-static int fqtss_34_2_5b_hack = false;
-static int fqtss_34_2_9b_hack = false;
-static int regeneration_hack = false;
+static int mrp_10_1_2f_hack;
+static int mrp_10_1_8a_hack;
+static int mrp_10_5_1_hack;
+static int mrp_10_5_1c_hack;
+static int mrp_10_5_1d_hack;
+static int msrp_35_1_14g_hack;
+static int fqtss_hack;
+static int fqtss_34_2_3_hack;
+static int fqtss_34_2_1b_hack;
+static int fqtss_34_2_5b_hack;
+static int fqtss_34_2_9b_hack;
+static int regeneration_hack;
 #endif
 
 
@@ -5472,8 +5471,9 @@ static void mrp_cfg_mcast_addr(struct mrp_info *mrp, u16 fid, u8 *dest,
 {
 	struct mrp_node *mac_node;
 	struct ksz_sw *sw = container_of(mrp, struct ksz_sw, mrp);
+	int override = (ports == 0);
 
-	sw->ops->cfg_mac(sw, 1, dest, ports, true, fid != 0, fid);
+	sw->ops->cfg_mac(sw, 1, dest, ports, override, fid != 0, fid);
 	mac_node = mrp_get_mac_info(&mrp->mac_list, dest, fid);
 	if (mac_node) {
 		struct mrp_mac_info *mac;
@@ -7465,7 +7465,7 @@ static void mrp_chk_blocked_addr(struct mrp_info *mrp)
 				ports = sw->PORT_MASK;
 			sw->ops->cfg_mac(sw, mac->index, mac->addr, ports,
 					 false, mac->fid != 0, mac->fid);
-			mac->jiffies = jiffies + msecs_to_jiffies(10000);
+			mac->jiffies = jiffies + msecs_to_jiffies(15000);
 		}
 		prev = next;
 		next = prev->next;

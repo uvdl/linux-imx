@@ -1535,6 +1535,15 @@ static int atmel_spi_probe(struct platform_device *pdev)
 	master->bits_per_word_mask = SPI_BPW_RANGE_MASK(8, 16);
 	master->dev.of_node = pdev->dev.of_node;
 	master->bus_num = pdev->id;
+#if defined(CONFIG_OF)
+	if (master->bus_num < 0) {
+		u32 value;
+
+		ret = of_property_read_u32(master->dev.of_node, "id", &value);
+		if (!ret)
+			master->bus_num = value;
+	}
+#endif
 	master->num_chipselect = master->dev.of_node ? 0 : 4;
 	master->setup = atmel_spi_setup;
 	master->transfer_one_message = atmel_spi_transfer_one_message;

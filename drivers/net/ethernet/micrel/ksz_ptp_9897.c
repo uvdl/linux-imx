@@ -2927,7 +2927,7 @@ static struct ptp_msg *ptp_set_rx_info(struct ptp_info *ptp, u8 *data, u8 port,
 
 #if 1
 /* Used for 802.1BA test tool to accept Announce messages. */
-static int ba_hack = false;
+static int ba_hack;
 #endif
 
 static struct ptp_msg *ptp_get_tx_info(struct ptp_info *ptp, u8 *data,
