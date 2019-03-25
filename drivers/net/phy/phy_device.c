@@ -687,14 +687,23 @@ int phy_connect_direct(struct net_device *dev, struct phy_device *phydev,
 {
 	int rc;
 
+	pr_err(">>>>>>> %s -- (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
+
 	rc = phy_attach_direct(dev, phydev, phydev->dev_flags, interface);
-	if (rc)
+	if (rc){
+		pr_err(">>>>>>> %s -- (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 		return rc;
+	}
+	pr_err(">>>>>>> %s -- (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 
 	phy_prepare_link(phydev, handler);
 	phy_start_machine(phydev);
-	if (phydev->irq > 0)
+	if (phydev->irq > 0){
+		pr_err(">>>>>>> %s -- (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 		phy_start_interrupts(phydev);
+	}
+
+	pr_err(">>>>>>> %s -- (%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 
 	return 0;
 }
@@ -723,6 +732,8 @@ struct phy_device *phy_connect(struct net_device *dev, const char *bus_id,
 	struct device *d;
 	int rc;
 
+	pr_err(">>>>>>> %s -- (%s):%d -> bus_id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus_id);
+
 	/* Search the list of PHY devices on the mdio bus for the
 	 * PHY with the requested name
 	 */
@@ -732,11 +743,16 @@ struct phy_device *phy_connect(struct net_device *dev, const char *bus_id,
 		return ERR_PTR(-ENODEV);
 	}
 	phydev = to_phy_device(d);
+	pr_err(">>>>>>> %s -- (%s):%d -> bus_id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus_id);
 
 	rc = phy_connect_direct(dev, phydev, handler, interface);
 	put_device(d);
-	if (rc)
+	if (rc){
+		pr_err(">>>>>>> %s -- (%s):%d -> bus_id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus_id);
 		return ERR_PTR(rc);
+	}
+
+	pr_err(">>>>>>> %s -- (%s):%d -> bus_id = %s\n", __FILE__, __FUNCTION__, __LINE__, bus_id);
 
 	return phydev;
 }

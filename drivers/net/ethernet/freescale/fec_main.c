@@ -2013,7 +2013,10 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	int phy_id;
 	int dev_id = fep->dev_id;
 
+	netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
+
 	if (fep->phy_node) {
+		netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 		phy_dev = of_phy_connect(ndev, fep->phy_node,
 					 &fec_enet_adjust_link, 0,
 					 fep->phy_interface);
@@ -2022,13 +2025,20 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 			return -ENODEV;
 		}
 	} else {
+		netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 		/* check for attached phy */
 		for (phy_id = 0; (phy_id < PHY_MAX_ADDR); phy_id++) {
-			if (!mdiobus_is_registered_device(fep->mii_bus, phy_id))
+			netdev_err(ndev, ">>>>>>> %s:(%s):%d -- phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id);
+			if (!mdiobus_is_registered_device(fep->mii_bus, phy_id)){
+				netdev_err(ndev, ">>>>>>> %s:(%s):%d -- phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id);
 				continue;
-			if (dev_id--)
+			}
+			if (dev_id--){
+				netdev_err(ndev, ">>>>>>> %s:(%s):%d -- phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id);
 				continue;
+			}
 			strlcpy(mdio_bus_id, fep->mii_bus->id, MII_BUS_ID_SIZE);
+			netdev_err(ndev, ">>>>>>> %s:(%s):%d -- phy_id = %d, mdio_bus_id = %s\n", __FILE__, __FUNCTION__, __LINE__, phy_id, mdio_bus_id);
 			break;
 		}
 
@@ -3762,7 +3772,8 @@ fec_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	}
-	fep->phy_node = phy_node;
+	// fep->phy_node = phy_node;
+	fep->phy_node = NULL; /*Testing*/
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
