@@ -7936,9 +7936,9 @@ static const u8 *sw_get_br_id(struct ksz_sw *sw)
 	//u8 id[8];
 	const u8* ret = _id;
 
-	memcpy(&id[2], sw->info->mac_addr, ETH_ALEN);
-	id[0] = 0x80;
-	id[1] = 0x00;
+	memcpy(&_id[2], sw->info->mac_addr, ETH_ALEN);
+	_id[0] = 0x80;
+	_id[1] = 0x00;
 
 #ifdef CONFIG_KSZ_STP
 	ret = stp_br_id(&sw->info->rstp);
