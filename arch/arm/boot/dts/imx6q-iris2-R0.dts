@@ -110,7 +110,7 @@
 
 &touch {
 	interrupt-parent = <&gpio1>;
-	interrupts = <4 0>;
+	interrupts = <1 0>;
 };
 
 &mxcfb1 {
