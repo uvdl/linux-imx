@@ -97,26 +97,30 @@ static s32 scaled_ppm_to_ppb(long ppm)
 
 /* posix clock implementation */
 
-static int ptp_clock_getres(struct posix_clock *pc, struct timespec64 *tp)
+static int ptp_clock_getres(struct posix_clock *pc, struct timespec *tp)
 {
 	tp->tv_sec = 0;
 	tp->tv_nsec = 1;
 	return 0;
 }
 
-static int ptp_clock_settime(struct posix_clock *pc, const struct timespec64 *tp)
+static int ptp_clock_settime(struct posix_clock *pc, const struct timespec *tp)
 {
 	struct ptp_clock *ptp = container_of(pc, struct ptp_clock, clock);
+	struct timespec64 ts = timespec_to_timespec64(*tp);
 
-	return  ptp->info->settime64(ptp->info, tp);
+	return  ptp->info->settime64(ptp->info, &ts);
 }
 
-static int ptp_clock_gettime(struct posix_clock *pc, struct timespec64 *tp)
+static int ptp_clock_gettime(struct posix_clock *pc, struct timespec *tp)
 {
 	struct ptp_clock *ptp = container_of(pc, struct ptp_clock, clock);
+	struct timespec64 ts;
 	int err;
 
-	err = ptp->info->gettime64(ptp->info, tp);
+	err = ptp->info->gettime64(ptp->info, &ts);
+	if (!err)
+		*tp = timespec64_to_timespec(ts);
 	return err;
 }
 
