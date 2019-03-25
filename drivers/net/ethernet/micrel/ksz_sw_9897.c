@@ -13121,10 +13121,11 @@ static void sw_free_fid(struct ksz_sw *sw, u16 fid)
 #endif
 }  /* sw_free_fid */
 
+static u8 _id[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 static const u8 *sw_get_br_id(struct ksz_sw *sw)
 {
-	u8 id[8];
-	const u8* ret = id;
+	//u8 id[8];
+	const u8* ret = _id;
 
 	memcpy(&id[2], sw->info->mac_addr, ETH_ALEN);
 	id[0] = 0x80;
