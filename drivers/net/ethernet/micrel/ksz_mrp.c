@@ -1759,8 +1759,8 @@ dbg_msg(" %s %d=%x:%d\n", __func__, port, new_decl, vlan->id);
 if (dbg_mrp_vlan)
 	mrp_show_node(&mrp->vlan_list, show_vlan_info);
 	if (mrp->vlan_list.cnt > 4) {
-if (dbg_mrp_vlan)
-dbg_msg(" stop dbg vlan\n");
+		if (dbg_mrp_vlan)
+			dbg_msg(" stop dbg vlan\n");
 		dbg_mrp_vlan = 0;
 	}
 #endif
