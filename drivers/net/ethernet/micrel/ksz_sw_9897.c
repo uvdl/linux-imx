@@ -17014,6 +17014,9 @@ static int ksz_mii_read(struct mii_bus *bus, int phy_id, int regnum)
 	struct ksz_sw *sw = &ks->sw;
 	int ret = 0xffff;
 
+	dev_err(NULL,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id, regnum);
+
 	if (phy_id > sw->mib_port_cnt + 1)
 		return 0xffff;
 
@@ -17044,6 +17047,9 @@ static int ksz_mii_write(struct mii_bus *bus, int phy_id, int regnum, u16 val)
 {
 	struct sw_priv *ks = bus->priv;
 	struct ksz_sw *sw = &ks->sw;
+
+	dev_err(NULL,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d, value = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id, regnum, val);
 
 	if (phy_id > sw->mib_port_cnt + 1)
 		return -EINVAL;
