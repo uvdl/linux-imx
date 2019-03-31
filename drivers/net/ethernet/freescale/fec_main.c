@@ -804,7 +804,7 @@ fec_enet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 	int ret;
 
 #ifdef HAVE_KSZ_SWITCH
-	struct ksz_port *port = &fep->port;
+	//struct ksz_port *port = &fep->port;
 	struct ksz_sw *sw = fep->port.sw;
 	//int header = 0;
 	//int len = skb->len;
@@ -826,7 +826,7 @@ fec_enet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 		netif_tx_stop_queue(nq);
 
 #ifdef HAVE_KSZ_SWITCH
-		stop_dev_queues(sw, dev, fep, queue);
+		stop_dev_queues(sw, ndev, fep, queue);
 #endif
 	}
 
@@ -1395,6 +1395,7 @@ skb_done:
 				if (queue_stopped && !__netif_subqueue_stopped(fep->netdev, queue_id))
 					wake_dev_queues(fep->port.sw, fep->netdev, queue_id);
 #endif
+			}
 		}
 	}
 
@@ -2458,7 +2459,7 @@ static int fec_enet_get_ts_info(struct net_device *ndev,
 {
 	struct fec_enet_private *fep = netdev_priv(ndev);
 
-#ifdef HAVE_KSZ_SWITCH && CONFIG_1588_PTP
+#if defined(HAVE_KSZ_SWITCH) && defined(CONFIG_1588_PTP)
 	struct ksz_sw *sw = fep->port.sw;
 
 	if (sw_is_switch(sw)) {
@@ -3304,27 +3305,27 @@ fec_enet_open(struct net_device *ndev)
 	int ret;
 
 #ifdef HAVE_KSZ_SWITCH
-	struct fec_enet_private	*hbp = fep;
+	struct fec_enet_private	*hfep = fep;
 	int rx_mode = 0;
 	struct ksz_sw *sw = fep->port.sw;
 
 	if (sw_is_switch(sw)) {
-		hbp = fep->hw_priv;
+		hfep = fep->hw_priv;
 		fep->multi = false;
 		fep->promisc = false;
-		if (hbp->opened > 0) {
+		if (hfep->opened > 0) {
 			netif_carrier_off(ndev);
 			goto skip_hw;
 		}
-		if (0 == hbp->opened) {
-			struct net_device *main_dev = hbp->netdev;
+		if (0 == hfep->opened) {
+			struct net_device *main_dev = hfep->netdev;
 
 			/* Need to wait for adjust_link to start operation. */
-			hbp->ready = false;
-			hbp->hw_multi = 0;
-			hbp->hw_promisc = 0;
+			hfep->ready = false;
+			hfep->hw_multi = 0;
+			hfep->hw_promisc = 0;
 #if FEC_STATS_SIZE > 0
-			memset(&hbp->ethtool_stats, 0, FEC_STATS_SIZE);
+			memset(&hfep->ethtool_stats, 0, FEC_STATS_SIZE);
 #endif
 			//bufsz += sw->net_ops->get_mtu(sw);
 			rx_mode = sw->net_ops->open_dev(sw, main_dev,
@@ -3332,7 +3333,7 @@ fec_enet_open(struct net_device *ndev)
 		}
 	}
 #if FEC_STATS_SIZE > 0
-	else memset(&hbp->ethtool_stats, 0, FEC_STATS_SIZE);
+	else memset(&hfep->ethtool_stats, 0, FEC_STATS_SIZE);
 #endif
 #endif	// HAVE_KSZ_SWITCH
 
@@ -3368,14 +3369,14 @@ fec_enet_open(struct net_device *ndev)
 
 #ifdef HAVE_KSZ_SWITCH
 	if (sw_is_switch(sw)) {
-		if (0 == hbp->opened) {
+		if (0 == hfep->opened) {
 			if (rx_mode & 1) {
-				hbp->hw_multi = 1;
+				hfep->hw_multi = 1;
 				ndev->flags |= IFF_ALLMULTI;
 				set_multicast_list(ndev);
 			}
 			if (rx_mode & 2) {
-				hbp->hw_promisc = 1;
+				hfep->hw_promisc = 1;
 				ndev->flags |= IFF_PROMISC;
 				set_multicast_list(ndev);
 			}
@@ -3384,7 +3385,7 @@ fec_enet_open(struct net_device *ndev)
 
 skip_hw:
 		sw->net_ops->open_port(sw, dev, &fep->port, &fep->state);
-		hbp->opened++;
+		hfep->opened++;
 	}
 	if (!sw_is_switch(sw))
 	/* affects the next statement below the endif... */
@@ -3432,22 +3433,22 @@ fec_enet_close(struct net_device *ndev)
 	struct fec_enet_private *fep = netdev_priv(ndev);
 
 #ifdef HAVE_KSZ_SWITCH
-	struct fec_enet_private *hbp = fep;
+	struct fec_enet_private *hfep = fep;
 	do {
 		struct ksz_sw *sw = fep->port.sw;
 
 		if (sw_is_switch(sw)) {
-			hbp = fep->hw_priv;
+			hfep = fep->hw_priv;
 			ndev->flags &= IFF_ALLMULTI;
 			set_multicast_list(ndev);
 			ndev->flags &= IFF_PROMISC;
 			set_multicast_list(ndev);
-			hbp->opened--;
-			if (!hbp->opened) {
+			hfep->opened--;
+			if (!hfep->opened) {
 				sw->net_ops->close(sw);
 			}
 			sw->net_ops->close_port(sw, ndev, &fep->port);
-			if (!hbp->opened) {
+			if (!hfep->opened) {
 				sw->net_ops->stop(sw, true);
 			}
 		}
@@ -3479,7 +3480,7 @@ fec_enet_close(struct net_device *ndev)
 		struct ksz_sw *sw = fep->port.sw;
 
 		if (sw_is_switch(sw)) {
-			if (hbp->opened > 0) {
+			if (hfep->opened > 0) {
 				fec_enet_clk_enable(ndev, false);	// NB: seems a strange thing to do if some still open...
 				return 0;
 			}
