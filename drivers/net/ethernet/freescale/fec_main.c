@@ -1841,10 +1841,7 @@ static void fec_enet_adjust_link(struct net_device *ndev)
 		phy_print_status(phy_dev);
 }
 
-#ifdef CONFIG_HAVE_KSZ9897
-static struct mii_bus *ksz9897_mii_bus = NULL;
-#endif	// CONFIG_HAVE_KSZ9897
-
+#ifndef CONFIG_HAVE_KSZ9897
 static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 {
 	struct fec_enet_private *fep = bus->priv;
@@ -1853,19 +1850,15 @@ static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 	uint int_events;
 	int ret = 0;
 
+	dev_err(dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- mii_id = %d, regnum = %d\n", __FILE__, __FUNCTION__, __LINE__, mii_id, regnum);
+
 	ret = pm_runtime_get_sync(dev);
 	if (ret < 0)
 		return ret;
 
 	fep->mii_timeout = 0;
 	reinit_completion(&fep->mdio_done);
-
-#ifdef CONFIG_HAVE_KSZ9897
-	if (ksz9897_mii_bus) {
-		ret = ksz9897_mii_bus->read(bus, mii_id, regnum);
-		goto out;
-	}
-#endif	// CONFIG_HAVE_KSZ9897
 
 	/* start a read op */
 	writel(FEC_MMFR_ST | FEC_MMFR_OP_READ |
@@ -1902,6 +1895,9 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 	unsigned long time_left;
 	int ret;
 
+	dev_err(dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- mii_id = %d, regnum = %d, value = %d\n", __FILE__, __FUNCTION__, __LINE__, mii_id, regnum, value);
+
 	ret = pm_runtime_get_sync(dev);
 	if (ret < 0)
 		return ret;
@@ -1910,13 +1906,6 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 
 	fep->mii_timeout = 0;
 	reinit_completion(&fep->mdio_done);
-
-#ifdef CONFIG_HAVE_KSZ9897
-	if (ksz9897_mii_bus) {
-		ret = ksz9897_mii_bus->write(bus, mii_id, regnum, value);
-		goto out2;
-	}
-#endif	// CONFIG_HAVE_KSZ9897
 
 	/* start a write op */
 	writel(FEC_MMFR_ST | FEC_MMFR_OP_WRITE |
@@ -1933,12 +1922,12 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 		ret  = -ETIMEDOUT;
 	}
 
-out2:
 	pm_runtime_mark_last_busy(dev);
 	pm_runtime_put_autosuspend(dev);
 
 	return ret;
 }
+#endif /* CONFIG_HAVE_KSZ9897 */
 
 static int fec_enet_clk_enable(struct net_device *ndev, bool enable)
 {
@@ -2030,14 +2019,14 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	int phy_id;
 	int dev_id = fep->dev_id;
 
-	dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_node = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, fep->phy_node ? fep->phy_node->name : "(null)");
+	netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
+
 	if (fep->phy_node) {
+		netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 		phy_dev = of_phy_connect(ndev, fep->phy_node,
 					 &fec_enet_adjust_link, 0,
 					 fep->phy_interface);
-		dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phydev = %s, mdio = %s, attached_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name,
+		netdev_err(ndev, ">>>>>>> %s:(%s):%d -- name = %s, phydev = %s, mdio = %s, attached_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name,
 				phy_dev ? (phy_dev->drv ? phy_dev->drv->name : "(nodrv)") : "(null)",
 				phy_dev ? phy_dev->mdio.dev.init_name : "(n/a)",
 				phy_dev ? (phy_dev->attached_dev ? phy_dev->attached_dev->dev.init_name : "(null)") : "(n/a)"
@@ -2047,18 +2036,20 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 			return -ENODEV;
 		}
 	} else {
+		netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 		/* check for attached phy */
 		for (phy_id = 0; (phy_id < PHY_MAX_ADDR); phy_id++) {
-			if (!mdiobus_is_registered_device(fep->mii_bus, phy_id)) {
-				dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_id);
+			netdev_err(ndev, ">>>>>>> %s:(%s):%d -- phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id);
+			if (!mdiobus_is_registered_device(fep->mii_bus, phy_id)){
+				netdev_err(ndev, ">>>>>>> %s:(%s):%d -- phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id);
 				continue;
-			} if (dev_id--) {
-				dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_id);
+			}
+			if (dev_id--){
+				netdev_err(ndev, ">>>>>>> %s:(%s):%d -- phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id);
 				continue;
 			}
 			strlcpy(mdio_bus_id, fep->mii_bus->id, MII_BUS_ID_SIZE);
+			netdev_err(ndev, ">>>>>>> %s:(%s):%d -- phy_id = %d, mdio_bus_id = %s\n", __FILE__, __FUNCTION__, __LINE__, phy_id, mdio_bus_id);
 			break;
 		}
 
@@ -2105,8 +2096,6 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 
 	phy_attached_info(phy_dev);
 
-	dev_err(&ndev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_dev = %s\n", __FILE__, __FUNCTION__, __LINE__, ndev->name, phy_dev->drv ? phy_dev->drv->name : "(null)");
 	return 0;
 }
 
@@ -2304,24 +2293,9 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev, int phy_mode)
 		return -EINVAL;
 	}
 
-	//fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
-	ksz9897_mii_bus = phydev->mdio.bus;
+	phy_detach(phydev);
 
-	{
-		struct mii_bus *bus = phydev->mdio.bus;
-		dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, mii_bus = %s, id = %s (%c%c%c), parent = %s\n",
-				__FILE__, __FUNCTION__, __LINE__, pdev->name,
-				bus->name ? bus->name : "(null)",
-				bus->id ? bus->id : "(null)",
-				bus->priv ? 'P' : ' ',
-				bus->read ? 'R' : ' ',
-				bus->write ? 'W' : ' ',
-				bus->parent ? bus->parent->init_name : "(null)"
-				);
-	}
-
-	return fec_enet_mii_init(pdev);
+	return 0;
 }
 #endif /* CONFIG_HAVE_KSZ9897 */
 
@@ -3835,10 +3809,15 @@ fec_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	}
-	fep->phy_node = phy_node;
-
-	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_node = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, fep->phy_node ? fep->phy_node->name : "(null)");
+	// fep->phy_node = phy_node;
+    if (fep->phy_node) {
+        dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_node = %s - setting to NULL\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, fep->phy_node->name);
+        fep->phy_node = NULL; /*Testing*/
+    } else {
+ 		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+    }
 
 	ret = of_get_phy_mode(pdev->dev.of_node);
 	if (ret < 0) {
