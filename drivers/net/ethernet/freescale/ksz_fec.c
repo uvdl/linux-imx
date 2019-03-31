@@ -30,7 +30,7 @@ static void get_sysfs_data_(struct net_device *dev,
 	struct fec_enet_private *fep = netdev_priv(dev);
 	struct sw_priv *hw_priv;
 
-	hw_priv = fep->parent;
+	hw_priv = (struct sw_priv *)fep->parent;
 	*port = &fep->port;
 	*proc_sem = &hw_priv->proc_sem;
 }  /* get_sysfs_data */
@@ -54,6 +54,8 @@ static void get_sysfs_data_(struct net_device *dev,
 #include "../micrel/ksz_sw_sysfs.c"
 #elif defined(CONFIG_HAVE_KSZ8463)
 #include "../micrel/ksz_sw_sysfs.c"
+#else
+#error "One of KSZ9897, KSZ8795, SMI_KSZ8895, KSZ8895, KSZ8863 or KSZ8463 should be defined."
 #endif
 
 #ifdef CONFIG_1588_PTP
@@ -423,7 +425,7 @@ static int ksz_fec_sw_init(struct fec_enet_private *fep)
 	}
 
 	/* Save the base device name. */
-	strlcpy(dev_label, hw_priv->dev->name, IFNAMSIZ);
+	strlcpy(dev_label, hw_priv->netdev->name, IFNAMSIZ);
 
 	prep_sw_dev(sw, fep, 0, port_count, mib_port_count, dev_label);
 
@@ -433,7 +435,7 @@ static int ksz_fec_sw_init(struct fec_enet_private *fep)
 
 	fep->link = 0;
 	fep->speed = 0;
-	fep->duplex = -1;
+	fep->full_duplex = -1;
 
 	/* Point to real private structure holding hardware information. */
 	fep->hw_priv = hw_priv;
@@ -454,7 +456,7 @@ static int ksz_fec_sw_init(struct fec_enet_private *fep)
 		dev->phydev->duplex = 1;
 		dev->phydev->speed = SPEED_1000;
 
-		spin_lock_init(&fep->lock);
+		//spin_lock_init(&fep->lock);
 
 		dev->netdev_ops = &fec_netdev_ops;
 		netif_napi_add(dev, &fep->napi, fec_enet_rx_napi, NAPI_POLL_WEIGHT);
