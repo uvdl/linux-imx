@@ -19,8 +19,11 @@
 #include <linux/ptp_clock_kernel.h>
 #include <linux/timecounter.h>
 
-#ifdef HAVE_KSZ_SWITCH
-#include "../micrel/ksz_sw.h"	// for struct ksz_port, ksz_sw_sysfs
+#if !defined(KSZ_CFG_9897_H)
+# error "expecting KSZ_CFG_9897_H to be defined."
+#endif
+#if !defined(KSZ_SW_H)
+# error "expecting KSZ_SW_H to be defined."
 #endif
 
 #if defined(CONFIG_M523x) || defined(CONFIG_M527x) || defined(CONFIG_M528x) || \
