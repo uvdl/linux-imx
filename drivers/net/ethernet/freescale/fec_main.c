@@ -76,7 +76,8 @@
 #ifndef CONFIG_HAVE_KSZ9897
 #warn "CONFIG_HAVE_KSZ9897 should have been defined at this point.  Check kernel config."
 #define CONFIG_HAVE_KSZ9897
-#endif#include "ksz_fec.h"
+#endif
+#include "ksz_fec.h"
 #endif
 
 #include "fec.h"
