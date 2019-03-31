@@ -59,7 +59,7 @@ static void get_sysfs_data_(struct net_device *dev,
 #include "../micrel/spi-ksz8463.c"
 #endif	// CONFIG_HAVE_KSZ9897
 
-#elif defined(CONFIG_HAVE_KSZ9897)
+#elif defined(CONFIG_HAVE_KSZ9897)	// CONFIG_KSZ_SWITCH_EMBEDDED
 #include "../micrel/ksz_cfg_9897.h"
 #elif defined(CONFIG_HAVE_KSZ8795)
 #include "../micrel/ksz_cfg_8795.h"
