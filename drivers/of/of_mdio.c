@@ -60,7 +60,7 @@ static void of_mdiobus_register_phy(struct mii_bus *mdio,
 		pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- mdio = %s, child = %s, phy = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, child->name, phy ? (phy->drv ? phy->drv->name : "(nodrv)") : "(null)", IS_ERR(phy));
 	} else {
 		phy = get_phy_device(mdio, addr, is_c45);
-		pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- mdio = %s, child = %s, phy = %s\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, child->name, phy ? (phy->drv ? phy->drv->name : "(nodrv)") : "(null)", IS_ERR(phy));
+		pr_err(">>>>>>>>>>>>>>> %s -> (%s):%d -- mdio = %s, child = %s, phy = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, mdio->name, child->name, phy ? (phy->drv ? phy->drv->name : "(nodrv)") : "(null)", IS_ERR(phy));
 	}
 	if (IS_ERR(phy)) {
 		dev_err(&mdio->dev, "phy %s not registered\n", child->name);
