@@ -77,6 +77,10 @@
 
 #include "fec.h"
 
+#if defined(CONFIG_KSZ_SWITCH)
+#include "ksz_fec.h"
+#endif
+
 static void set_multicast_list(struct net_device *ndev);
 static void fec_enet_itr_coal_init(struct net_device *ndev);
 
@@ -965,6 +969,7 @@ fec_restart(struct net_device *ndev)
 	struct phy_device *phydev = ndev->phydev;
 	if (phydev->link) {
 		fep->ready = netif_running(ndev);
+	}
 #endif
 
 	/* Whack a reset.  We should wait for this.
@@ -1374,7 +1379,7 @@ skb_done:
 		bdp = fec_enet_get_nextdesc(bdp, &txq->bd);
 
 #ifdef HAVE_KSZ_SWITCH
-		queue_stopped = __netif_subqueue_stopped(fec->dev, queue_id);
+		queue_stopped = __netif_subqueue_stopped(fep->netdev, queue_id);
 #endif
 
 		/* Since we have freed up a buffer, the ring is no longer full
@@ -1386,8 +1391,8 @@ skb_done:
 
 #ifdef HAVE_KSZ_SWITCH
 				/* Transmit queue is restarted. */
-				if (queue_stopped && !__netif_subqueue_stopped(fec->dev, queue_id))
-					wake_dev_queues(fec->port.sw, fec->dev, queue_id);
+				if (queue_stopped && !__netif_subqueue_stopped(fep->netdev, queue_id))
+					wake_dev_queues(fep->port.sw, fep->netdev, queue_id);
 #endif
 		}
 	}
@@ -3311,7 +3316,7 @@ fec_enet_open(struct net_device *ndev)
 			goto skip_hw;
 		}
 		if (0 == hbp->opened) {
-			struct net_device *main_dev = hbp->dev;
+			struct net_device *main_dev = hbp->netdev;
 
 			/* Need to wait for adjust_link to start operation. */
 			hbp->ready = false;
@@ -3388,7 +3393,7 @@ skip_hw:
 
 #ifdef HAVE_KSZ_SWITCH
 	/* Wake up other network devices when in multiple devices mode. */
-	wake_dev_queues(fep->port.sw, fep->dev, -1);
+	wake_dev_queues(fep->port.sw, fep->netdev, -1);
 #endif
 
 	if ((id_entry->driver_data & FEC_QUIRK_BUG_WAITMODE) &&
@@ -3440,7 +3445,7 @@ fec_enet_close(struct net_device *ndev)
 			if (!hbp->opened) {
 				sw->net_ops->close(sw);
 			}
-			sw->net_ops->close_port(sw, dev, &fep->port);
+			sw->net_ops->close_port(sw, ndev, &fep->port);
 			if (!hbp->opened) {
 				sw->net_ops->stop(sw, true);
 			}
@@ -3481,7 +3486,7 @@ fec_enet_close(struct net_device *ndev)
 	} while (0);
 
 	/* Reset ready indication. */
-	bp->ready = false;
+	fep->ready = false;
 #endif
 
 	fec_enet_clk_enable(ndev, false);
@@ -3494,7 +3499,7 @@ fec_enet_close(struct net_device *ndev)
 #else
 	pm_qos_remove_request(&fep->pm_qos_req);
 	pm_runtime_mark_last_busy(&fep->pdev->dev);
-#ifndef
+#endif
 
 	fec_enet_free_buffers(ndev);
 
@@ -4254,7 +4259,7 @@ fec_probe(struct platform_device *pdev)
 
 // NB: I think this is a KEY code to make the FEC-KSZ9897 link work
 #ifdef HAVE_KSZ_SWITCH
-	if (fec->port.sw)
+	if (fep->port.sw)
 		ret = ksz_fec_sw_init(fep);
 	phy_attached_info(ndev->phydev);
 #endif
