@@ -2616,8 +2616,6 @@ static const struct fec_stat {
 	{ "IEEE_rx_octets_ok", IEEE_R_OCTETS_OK },
 };
 
-#define FEC_STATS_SIZE		(ARRAY_SIZE(fec_stats) * sizeof(u64))
-
 static void fec_enet_update_ethtool_stats(struct net_device *dev)
 {
 	struct fec_enet_private *fep = netdev_priv(dev);
@@ -2643,7 +2641,7 @@ static void fec_enet_get_ethtool_stats(struct net_device *dev,
 	if (netif_running(dev))
 		fec_enet_update_ethtool_stats(dev);
 
-	memcpy(data, fep->ethtool_stats, FEC_STATS_SIZE);
+	memcpy(data, fep->ethtool_stats, (ARRAY_SIZE(fec_stats) * sizeof(u64)));
 }
 
 static void fec_enet_get_strings(struct net_device *netdev,
@@ -2670,7 +2668,6 @@ static int fec_enet_get_sset_count(struct net_device *dev, int sset)
 }
 
 #else	/* !defined(CONFIG_M5272) */
-#define FEC_STATS_SIZE	0
 static inline void fec_enet_update_ethtool_stats(struct net_device *dev)
 {
 }
@@ -3324,17 +3321,15 @@ fec_enet_open(struct net_device *ndev)
 			hfep->ready = false;
 			hfep->hw_multi = 0;
 			hfep->hw_promisc = 0;
-#if FEC_STATS_SIZE > 0
-			memset(&hfep->ethtool_stats, 0, FEC_STATS_SIZE);
-#endif
+			memset(&hfep->ethtool_stats, 0, (ARRAY_SIZE(fec_stats) * sizeof(u64)));
+
 			//bufsz += sw->net_ops->get_mtu(sw);
 			rx_mode = sw->net_ops->open_dev(sw, main_dev,
 				main_dev->dev_addr);
 		}
 	}
-#if FEC_STATS_SIZE > 0
-	else memset(&hfep->ethtool_stats, 0, FEC_STATS_SIZE);
-#endif
+	else
+		memset(&hfep->ethtool_stats, 0, (ARRAY_SIZE(fec_stats) * sizeof(u64)));
 #endif	// HAVE_KSZ_SWITCH
 
 	ret = pm_runtime_get_sync(&fep->pdev->dev);
@@ -3384,7 +3379,7 @@ fec_enet_open(struct net_device *ndev)
 		}
 
 skip_hw:
-		sw->net_ops->open_port(sw, dev, &fep->port, &fep->state);
+		sw->net_ops->open_port(sw, ndev, &fep->port, &fep->state);
 		hfep->opened++;
 	}
 	if (!sw_is_switch(sw))
@@ -4003,7 +3998,7 @@ fec_probe(struct platform_device *pdev)
 
 	/* Init network device */
 	ndev = alloc_etherdev_mqs(sizeof(struct fec_enet_private) +
-				  FEC_STATS_SIZE, num_tx_qs, num_rx_qs);
+				  (ARRAY_SIZE(fec_stats) * sizeof(u64)), num_tx_qs, num_rx_qs);
 	if (!ndev)
 		return -ENOMEM;
 
@@ -4232,7 +4227,7 @@ fec_probe(struct platform_device *pdev)
 			if (ndev->phydev) {
 				fep->link = 0;
 				fep->speed = 0;
-				fep->duplex = -1;
+				fep->full_duplex = -1;
 				ret = 0;
 			}
 		}
