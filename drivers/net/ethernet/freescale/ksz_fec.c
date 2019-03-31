@@ -288,7 +288,7 @@ static void mdio_write(struct net_device *dev, int phy_id, int reg_num, int val)
 	mutex_unlock(&bus->mdio_lock);
 }
 
-static void ksz_fec_adjust_link(struct net_device *dev)
+static void __maybe_unused ksz_fec_adjust_link(struct net_device *dev)
 {}
 #endif	// CONFIG_KSZ_NO_MDIO_BUS
 
@@ -442,14 +442,17 @@ static int ksz_fec_sw_init(struct fec_enet_private *fep)
 	INIT_DELAYED_WORK(&hw_priv->promisc_reset, promisc_reset_work);
 
 	for (i = 1; i < dev_count; i++) {
-		dev = alloc_etherdev_mq(sizeof(*fep), hw_priv->num_queues);
+		dev = alloc_etherdev_mqs(
+			sizeof(*fep) + (ARRAY_SIZE(fec_stats) * sizeof(u64)),
+			hw_priv->num_tx_queues, hw_priv->num_rx_queues);
 		if (!dev)
 			break;
 
 		fep = netdev_priv(dev);
 		fep->pdev = pdev;
 		fep->netdev = dev;
-		fep->num_queues = hw_priv->num_queues;
+		fep->num_tx_queues = hw_priv->num_tx_queues;
+		fep->num_rx_queues = hw_priv->num_rx_queues;
 
 		fep->hw_priv = hw_priv;
 		dev->phydev = &fep->dummy_phy;
