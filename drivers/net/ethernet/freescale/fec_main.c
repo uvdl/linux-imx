@@ -73,12 +73,13 @@
 #if defined(CONFIG_KSZ_SWITCH)
 #define HAVE_KSZ_SWITCH
 #define DISABLE_PM
+#include "ksz_fec.h"
 #endif
 
 #include "fec.h"
 
 #if defined(CONFIG_KSZ_SWITCH)
-#include "ksz_fec.h"
+#include "ksz_fec.c"
 #endif
 
 static void set_multicast_list(struct net_device *ndev);
