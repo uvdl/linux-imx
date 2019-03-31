@@ -443,7 +443,7 @@ static int ksz_fec_sw_init(struct fec_enet_private *fep)
 
 	for (i = 1; i < dev_count; i++) {
 		dev = alloc_etherdev_mqs(
-			sizeof(*fep) + (ARRAY_SIZE(fec_stats) * sizeof(u64)),
+			sizeof(*fep) + fep->len_fec_stats,
 			hw_priv->num_tx_queues, hw_priv->num_rx_queues);
 		if (!dev)
 			break;

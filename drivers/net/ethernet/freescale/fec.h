@@ -19,11 +19,8 @@
 #include <linux/ptp_clock_kernel.h>
 #include <linux/timecounter.h>
 
-#if !defined(KSZ_CFG_9897_H)
-# error "expecting KSZ_CFG_9897_H to be defined."
-#endif
-#if !defined(KSZ_SW_H)
-# error "expecting KSZ_SW_H to be defined."
+#if !defined(CONFIG_KSZ_SWITCH)
+# error "expecting CONFIG_KSZ_SWITCH to be defined."
 #endif
 
 #if defined(CONFIG_M523x) || defined(CONFIG_M527x) || defined(CONFIG_M528x) || \
@@ -646,7 +643,7 @@ struct fec_enet_private {
 
 	u64 ethtool_stats[0];
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	struct fec_enet_private	*hw_priv;
 	struct phy_device	dummy_phy;
 	struct ksz_port		port;
@@ -662,10 +659,11 @@ struct fec_enet_private {
 	void			*parent;
 	struct delayed_work	promisc_reset;
 	struct ksz_sw_sysfs	sysfs;
+	int			len_fec_stats;
 #ifdef CONFIG_1588_PTP
 	struct ksz_ptp_sysfs	ptp_sysfs;
 #endif	// CONFIG_1588_PTP
-#endif	// HAVE_KSZ_SWITCH
+#endif	// CONFIG_KSZ_SWITCH
 };
 
 void fec_ptp_init(struct platform_device *pdev);

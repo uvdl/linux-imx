@@ -4213,6 +4213,7 @@ fec_probe(struct platform_device *pdev)
 
 // NB: I think this is a KEY code to make the FEC-KSZ9897 link work
 #ifdef HAVE_KSZ_SWITCH
+	fep->len_fec_stats = (ARRAY_SIZE(fec_stats) * sizeof(u64);
 	fep->hw_priv = fep;
 	if (ret)
 		ret = ksz_fec_sw_chk(fep);
