@@ -16,8 +16,8 @@
  * GNU General Public License for more details.
  */
 
-#ifndef KSZ_SW_8795_H
-#define KSZ_SW_8795_H
+#ifndef KSZ_SW_H // KSZ_SW_8795_H
+#define KSZ_SW_H // KSZ_SW_8795_H
 
 
 /* These definitions should be defined before this header file. */
