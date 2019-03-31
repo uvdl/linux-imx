@@ -4256,7 +4256,7 @@ fec_drv_remove(struct platform_device *pdev)
     dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
-ifdef CONFIG_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	if (ndev->phydev) {
         dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);

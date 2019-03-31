@@ -17014,7 +17014,7 @@ static u16 _rll_shadow[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1
 };
 
-static _rll_read_report(struct ksz_sw *sw, struct mii_bus *bus, int phy_id, int regnum, int ret)
+static void _rll_read_report(struct ksz_sw *sw, struct mii_bus *bus, int phy_id, int regnum, int ret)
 {
     if (regnum > ARRAY_SIZE(_rll_shadow)) {
 		dev_err(sw->dev,
@@ -17028,7 +17028,7 @@ static _rll_read_report(struct ksz_sw *sw, struct mii_bus *bus, int phy_id, int 
     }
 }
 
-static _rll_write_report(struct ksz_sw *sw, struct mii_bus *bus, int phy_id, int regnum, u16 val)
+static void _rll_write_report(struct ksz_sw *sw, struct mii_bus *bus, int phy_id, int regnum, u16 val)
 {
     if (regnum > ARRAY_SIZE(_rll_shadow)) {
 		dev_err(sw->dev,
