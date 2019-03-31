@@ -23,6 +23,7 @@
 #define DBG
 #define DEBUG_MSG
 #if 0
+#define DEBUG_PHY
 #define DBG_LINK
 #endif
 #endif
