@@ -57,6 +57,8 @@ static void get_sysfs_data_(struct net_device *dev,
 #include "../micrel/spi-ksz8863.c"
 #elif defined(CONFIG_HAVE_KSZ8463)
 #include "../micrel/spi-ksz8463.c"
+#else
+#error "One of KSZ9897, KSZ8795, SMI_KSZ8895, KSZ8895, KSZ8863 or KSZ8463 should be defined."
 #endif	// CONFIG_HAVE_KSZ9897
 
 #elif defined(CONFIG_HAVE_KSZ9897)	// CONFIG_KSZ_SWITCH_EMBEDDED
@@ -69,6 +71,8 @@ static void get_sysfs_data_(struct net_device *dev,
 #include "../micrel/ksz_cfg_8863.h"
 #elif defined(CONFIG_HAVE_KSZ8463)
 #include "../micrel/ksz_cfg_8463.h"
+#else
+#error "One of KSZ9897, KSZ8795, SMI_KSZ8895, KSZ8895, KSZ8863 or KSZ8463 should be defined."
 #endif	// CONFIG_KSZ_SWITCH_EMBEDDED
 
 #ifndef CONFIG_KSZ_SWITCH_EMBEDDED
