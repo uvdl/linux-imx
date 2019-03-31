@@ -963,9 +963,8 @@ fec_restart(struct net_device *ndev)
 
 #ifdef CONFIG_KSZ_SWITCH
 	struct phy_device *phydev = ndev->phydev;
-	if (phydev->link) {
+	if (phydev && phydev->link)
 		fep->ready = netif_running(ndev);
-	}
 #endif
 
 	/* Whack a reset.  We should wait for this.
@@ -2438,7 +2437,7 @@ static void fec_enet_get_regs(struct net_device *ndev,
 	u32 i, off;
 
 #ifdef CONFIG_KSZ_SWITCH
-	if (fep != fep->hw_priv)
+	if (fep->hw_priv && fep != fep->hw_priv)
 		theregs = (u32 __iomem *)fep->hw_priv->hwp;
 #endif
 	memset(buf, 0, regs->len);
@@ -2617,7 +2616,8 @@ static void fec_enet_update_ethtool_stats(struct net_device *dev)
 	int i;
 
 #ifdef CONFIG_KSZ_SWITCH
-	fep = fep->hw_priv;
+	if (fep->hw_priv)
+		fep = fep->hw_priv;
 #endif
 
 	for (i = 0; i < ARRAY_SIZE(fec_stats); i++)
@@ -2630,7 +2630,8 @@ static void fec_enet_get_ethtool_stats(struct net_device *dev,
 	struct fec_enet_private *fep = netdev_priv(dev);
 
 #ifdef CONFIG_KSZ_SWITCH
-	dev = fep->hw_priv->netdev;
+	if (fep->hw_priv)
+		dev = fep->hw_priv->netdev;
 #endif
 
 	if (netif_running(dev))
@@ -2927,7 +2928,7 @@ fec_enet_get_wol(struct net_device *ndev, struct ethtool_wolinfo *wol)
 	struct fec_enet_private *fep = netdev_priv(ndev);
 
 #ifdef CONFIG_KSZ_SWITCH
-	if (fep != fep->hw_priv)
+	if (fep->hw_priv)
 		fep = fep->hw_priv;
 #endif
 
@@ -2945,7 +2946,7 @@ fec_enet_set_wol(struct net_device *ndev, struct ethtool_wolinfo *wol)
 	struct fec_enet_private *fep = netdev_priv(ndev);
 
 #ifdef CONFIG_KSZ_SWITCH
-	if (fep != fep->hw_priv)
+	if (fep->hw_priv)
 		fep = fep->hw_priv;
 #endif
 
@@ -3301,7 +3302,7 @@ fec_enet_open(struct net_device *ndev)
 	int rx_mode = 0;
 	struct ksz_sw *sw = fep->port.sw;
 
-	if (sw_is_switch(sw)) {
+	if (fep->hw_priv && sw_is_switch(sw)) {
 		hfep = fep->hw_priv;
 		fep->multi = false;
 		fep->promisc = false;
@@ -3323,8 +3324,8 @@ fec_enet_open(struct net_device *ndev)
 				main_dev->dev_addr);
 		}
 	}
-	else
-		memset(&hfep->ethtool_stats, 0, (ARRAY_SIZE(fec_stats) * sizeof(u64)));
+	//else
+	//	memset(&hfep->ethtool_stats, 0, (ARRAY_SIZE(fec_stats) * sizeof(u64)));
 #endif	// CONFIG_KSZ_SWITCH
 
 	ret = pm_runtime_get_sync(&fep->pdev->dev);
@@ -3427,7 +3428,7 @@ fec_enet_close(struct net_device *ndev)
 	do {
 		struct ksz_sw *sw = fep->port.sw;
 
-		if (sw_is_switch(sw)) {
+		if (fep->hw_priv && sw_is_switch(sw)) {
 			hfep = fep->hw_priv;
 			ndev->flags &= IFF_ALLMULTI;
 			set_multicast_list(ndev);
@@ -3644,7 +3645,7 @@ static int fec_set_features(struct net_device *netdev,
 	netdev_features_t changed = features ^ netdev->features;
 
 #ifdef CONFIG_KSZ_SWITCH
-	if (fep != fep->hw_priv)
+	if (fep->hw_priv)
 		fep = fep->hw_priv;
 #endif
 
@@ -4381,7 +4382,7 @@ static int __maybe_unused fec_suspend(struct device *dev)
 	int ret = 0;
 
 #ifdef CONFIG_KSZ_SWITCH
-	if (fep != fep->hw_priv)
+	if (fep->hw_priv)
 		fep = fep->hw_priv;
 #endif
 
@@ -4437,7 +4438,7 @@ static int __maybe_unused fec_resume(struct device *dev)
 	int val;
 
 #ifdef CONFIG_KSZ_SWITCH
-	if (fep != fep->hw_priv)
+	if (fep->hw_priv)
 		fep = fep->hw_priv;
 #endif
 
