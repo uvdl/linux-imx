@@ -638,6 +638,27 @@ struct fec_enet_private {
 	int phy_reset_duration;
 
 	u64 ethtool_stats[0];
+
+#ifdef HAVE_KSZ_SWITCH
+	struct fec_enet_private	*hw_priv;
+	struct phy_device	dummy_phy;
+	struct ksz_port		port;
+	struct mii_if_info	mii_if;
+	int			phy_addr;
+	u8			state;
+	u32			ready:1;
+	u32			multi:1;
+	u32			promisc:1;
+	u8			opened;
+	u8			hw_multi;
+	u8			hw_promisc;
+	void			*parent;
+	struct delayed_work	promisc_reset;
+	struct ksz_sw_sysfs	sysfs;
+#ifdef CONFIG_1588_PTP
+	struct ksz_ptp_sysfs	ptp_sysfs;
+#endif	// CONFIG_1588_PTP
+#endif	// HAVE_KSZ_SWITCH
 };
 
 void fec_ptp_init(struct platform_device *pdev);
