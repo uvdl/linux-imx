@@ -4255,7 +4255,11 @@ fec_probe(struct platform_device *pdev)
 #ifdef CONFIG_KSZ_SWITCH
 	if (fep->port.sw)
 		ret = ksz_fec_sw_init(fep);
-	phy_attached_info(ndev->phydev);
+	if (ndev->phydev)
+		phy_attached_info(ndev->phydev);
+	else
+		netdev_info(ndev, "deferring PHY attachment (%d)\n", ret);
+
 #endif
 
 	device_init_wakeup(&ndev->dev, fep->wol_flag &
