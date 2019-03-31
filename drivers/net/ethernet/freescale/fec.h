@@ -13,15 +13,15 @@
 #define	FEC_H
 /****************************************************************************/
 
+#if defined(CONFIG_KSZ_SWITCH)
+#include "ksz_fec.h"
+#endif
+
 #include <linux/clocksource.h>
 #include <linux/net_tstamp.h>
 #include <linux/pm_qos.h>
 #include <linux/ptp_clock_kernel.h>
 #include <linux/timecounter.h>
-
-#if !defined(CONFIG_KSZ_SWITCH)
-# error "expecting CONFIG_KSZ_SWITCH to be defined."
-#endif
 
 #if defined(CONFIG_M523x) || defined(CONFIG_M527x) || defined(CONFIG_M528x) || \
     defined(CONFIG_M520x) || defined(CONFIG_M532x) || defined(CONFIG_ARM) || \

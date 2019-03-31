@@ -70,20 +70,11 @@
 #include <asm/cacheflush.h>
 #include <soc/imx/cpuidle.h>
 
-#if defined(CONFIG_KSZ_SWITCH)
-#define HAVE_KSZ_SWITCH
-#define DISABLE_PM
-#ifndef CONFIG_HAVE_KSZ9897
-#warn "CONFIG_HAVE_KSZ9897 should have been defined at this point.  Check kernel config."
-#define CONFIG_HAVE_KSZ9897
-#endif
-#include "ksz_fec.h"
-#endif
-
 #include "fec.h"
 
 #if defined(CONFIG_KSZ_SWITCH)
 #include "ksz_fec.c"
+#define DISABLE_PM
 #endif
 
 static void set_multicast_list(struct net_device *ndev);
@@ -807,7 +798,7 @@ fec_enet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 	struct netdev_queue *nq;
 	int ret;
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	//struct ksz_port *port = &fep->port;
 	struct ksz_sw *sw = fep->port.sw;
 	//int header = 0;
@@ -829,7 +820,7 @@ fec_enet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 	if (entries_free <= txq->tx_stop_threshold) {
 		netif_tx_stop_queue(nq);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 		stop_dev_queues(sw, ndev, fep, queue);
 #endif
 	}
@@ -970,7 +961,7 @@ fec_restart(struct net_device *ndev)
 	u32 rcntl = OPT_FRAME_SIZE | 0x04;
 	u32 ecntl = FEC_ENET_ETHEREN; /* ETHEREN */
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	struct phy_device *phydev = ndev->phydev;
 	if (phydev->link) {
 		fep->ready = netif_running(ndev);
@@ -1290,7 +1281,7 @@ fec_enet_tx_queue(struct net_device *ndev, u16 queue_id)
 	int	index = 0;
 	int	entries_free;
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	int queue_stopped;
 	struct net_device *hdev;
 #endif
@@ -1327,7 +1318,7 @@ fec_enet_tx_queue(struct net_device *ndev, u16 queue_id)
 		if (!skb)
 			goto skb_done;
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 		hdev = ndev;
 		ndev = netdev_priv(skb->dev);
 #endif
@@ -1352,7 +1343,7 @@ fec_enet_tx_queue(struct net_device *ndev, u16 queue_id)
 			ndev->stats.tx_bytes += skb->len;
 		}
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 		ndev = hdev;
 #endif
 
@@ -1383,7 +1374,7 @@ skb_done:
 		/* Update pointer to next buffer descriptor to be transmitted */
 		bdp = fec_enet_get_nextdesc(bdp, &txq->bd);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 		queue_stopped = __netif_subqueue_stopped(fep->netdev, queue_id);
 #endif
 
@@ -1394,7 +1385,7 @@ skb_done:
 			if (entries_free >= txq->tx_wake_threshold) {
 				netif_tx_wake_queue(nq);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 				/* Transmit queue is restarted. */
 				if (queue_stopped && !__netif_subqueue_stopped(fep->netdev, queue_id))
 					wake_dev_queues(fep->port.sw, fep->netdev, queue_id);
@@ -1492,7 +1483,7 @@ fec_enet_rx_queue(struct net_device *ndev, int budget, u16 queue_id)
 	bool	is_copybreak;
 	bool	need_swap = fep->quirks & FEC_QUIRK_SWAP_FRAME;
 
-//#ifdef HAVE_KSZ_SWITCH
+//#ifdef CONFIG_KSZ_SWITCH
 //	struct net_device *parent_dev = NULL;
 //	struct sk_buff *parent_skb = NULL;
 //	struct ksz_sw *sw = fep->port.sw;
@@ -1569,7 +1560,7 @@ fec_enet_rx_queue(struct net_device *ndev, int budget, u16 queue_id)
 					 FEC_ENET_RX_FRSIZE - fep->rx_align,
 					 DMA_FROM_DEVICE);
 
-//#ifdef HAVE_KSZ_SWITCH
+//#ifdef CONFIG_KSZ_SWITCH
 //			if (sw_is_switch(sw)) {
 //				struct fec_enet_private *hw_priv;
 //
@@ -1685,7 +1676,7 @@ rx_processing_done:
 		 */
 		writel(0, rxq->bd.reg_desc_active);
 		
-//#ifdef HAVE_KSZ_SWITCH
+//#ifdef CONFIG_KSZ_SWITCH
 //		if (parent_skb) {
 //			struct net_device *bp = netdev_priv(parent_dev);
 //
@@ -1929,7 +1920,7 @@ static void fec_enet_adjust_link(struct net_device *ndev)
 			status_change = 1;
 		}
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 		fep->ready = netif_running(ndev);
 #endif
 
@@ -2299,7 +2290,7 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 #endif
 
 // NB: I think this is a KEY code to make the FEC-KSZ9897 link work
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	node = pdev->dev.of_node;
 	/* Below code assumes a regular PHY is specified. */
 	if (node && of_phy_is_fixed_link(node))
@@ -2353,7 +2344,7 @@ err_out_unregister_bus:
 err_out_free_mdiobus:
 	mdiobus_free(fep->mii_bus);
 err_out:
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	fep->mii_bus = NULL;
 #endif
 	return err;
@@ -2446,7 +2437,7 @@ static void fec_enet_get_regs(struct net_device *ndev,
 	u32 *buf = (u32 *)regbuf;
 	u32 i, off;
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	if (fep != fep->hw_priv)
 		theregs = (u32 __iomem *)fep->hw_priv->hwp;
 #endif
@@ -2463,7 +2454,7 @@ static int fec_enet_get_ts_info(struct net_device *ndev,
 {
 	struct fec_enet_private *fep = netdev_priv(ndev);
 
-#if defined(HAVE_KSZ_SWITCH) && defined(CONFIG_1588_PTP)
+#if defined(CONFIG_KSZ_SWITCH) && defined(CONFIG_1588_PTP)
 	struct ksz_sw *sw = fep->port.sw;
 
 	if (sw_is_switch(sw)) {
@@ -2625,7 +2616,7 @@ static void fec_enet_update_ethtool_stats(struct net_device *dev)
 	struct fec_enet_private *fep = netdev_priv(dev);
 	int i;
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	fep = fep->hw_priv;
 #endif
 
@@ -2638,7 +2629,7 @@ static void fec_enet_get_ethtool_stats(struct net_device *dev,
 {
 	struct fec_enet_private *fep = netdev_priv(dev);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	dev = fep->hw_priv->netdev;
 #endif
 
@@ -2935,7 +2926,7 @@ fec_enet_get_wol(struct net_device *ndev, struct ethtool_wolinfo *wol)
 {
 	struct fec_enet_private *fep = netdev_priv(ndev);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	if (fep != fep->hw_priv)
 		fep = fep->hw_priv;
 #endif
@@ -2953,7 +2944,7 @@ fec_enet_set_wol(struct net_device *ndev, struct ethtool_wolinfo *wol)
 {
 	struct fec_enet_private *fep = netdev_priv(ndev);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	if (fep != fep->hw_priv)
 		fep = fep->hw_priv;
 #endif
@@ -3004,7 +2995,7 @@ static int fec_enet_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd)
 	struct fec_enet_private *fep = netdev_priv(ndev);
 	struct phy_device *phydev = ndev->phydev;
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	int result;
 	struct ksz_sw *sw = fep->port.sw;
 #ifdef CONFIG_1588_PTP
@@ -3057,7 +3048,7 @@ static int fec_enet_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd)
 	}
 	if (result != -EOPNOTSUPP)
 		return result;
-#endif	// HAVE_KSZ_SWITCH
+#endif	// CONFIG_KSZ_SWITCH
 
 	if (!netif_running(ndev))
 		return -EINVAL;
@@ -3305,7 +3296,7 @@ fec_enet_open(struct net_device *ndev)
 				platform_get_device_id(fep->pdev);
 	int ret;
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	struct fec_enet_private	*hfep = fep;
 	int rx_mode = 0;
 	struct ksz_sw *sw = fep->port.sw;
@@ -3334,7 +3325,7 @@ fec_enet_open(struct net_device *ndev)
 	}
 	else
 		memset(&hfep->ethtool_stats, 0, (ARRAY_SIZE(fec_stats) * sizeof(u64)));
-#endif	// HAVE_KSZ_SWITCH
+#endif	// CONFIG_KSZ_SWITCH
 
 	ret = pm_runtime_get_sync(&fep->pdev->dev);
 	if (ret < 0)
@@ -3366,7 +3357,7 @@ fec_enet_open(struct net_device *ndev)
 
 	napi_enable(&fep->napi);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	if (sw_is_switch(sw)) {
 		if (0 == hfep->opened) {
 			if (rx_mode & 1) {
@@ -3388,11 +3379,11 @@ skip_hw:
 	}
 	if (!sw_is_switch(sw))
 	/* affects the next statement below the endif... */
-#endif	// HAVE_KSZ_SWITCH
+#endif	// CONFIG_KSZ_SWITCH
 	phy_start(ndev->phydev);
 	netif_tx_start_all_queues(ndev);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	/* Wake up other network devices when in multiple devices mode. */
 	wake_dev_queues(fep->port.sw, fep->netdev, -1);
 #endif
@@ -3431,7 +3422,7 @@ fec_enet_close(struct net_device *ndev)
 {
 	struct fec_enet_private *fep = netdev_priv(ndev);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	struct fec_enet_private *hfep = fep;
 	do {
 		struct ksz_sw *sw = fep->port.sw;
@@ -3457,7 +3448,7 @@ fec_enet_close(struct net_device *ndev)
 #else
 	if (ndev->phydev)
 	/* affects the next statement below the endif... */
-#endif	// HAVE_KSZ_SWITCH
+#endif	// CONFIG_KSZ_SWITCH
 	phy_stop(ndev->phydev);
 
 	if (netif_device_present(ndev)) {
@@ -3474,7 +3465,7 @@ fec_enet_close(struct net_device *ndev)
 
 	fec_enet_update_ethtool_stats(ndev);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	do {
 		struct ksz_sw *sw = fep->port.sw;
 
@@ -3652,7 +3643,7 @@ static int fec_set_features(struct net_device *netdev,
 	struct fec_enet_private *fep = netdev_priv(netdev);
 	netdev_features_t changed = features ^ netdev->features;
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	if (fep != fep->hw_priv)
 		fep = fep->hw_priv;
 #endif
@@ -3710,14 +3701,14 @@ static const struct net_device_ops fec_netdev_ops = {
 	.ndo_start_xmit		= fec_enet_start_xmit,
 	.ndo_select_queue       = fec_enet_select_queue,
 	.ndo_set_rx_mode	= set_multicast_list,
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	.ndo_change_mtu		= ksz_eth_change_mtu,
 #else
 	.ndo_change_mtu		= eth_change_mtu,
 #endif
 	.ndo_validate_addr	= eth_validate_addr,
 	.ndo_tx_timeout		= fec_timeout,
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	.ndo_set_mac_address	= ksz_fec_set_mac_address,
 #else
 	.ndo_set_mac_address	= fec_set_mac_address,
@@ -3727,7 +3718,7 @@ static const struct net_device_ops fec_netdev_ops = {
 	.ndo_poll_controller	= fec_poll_controller,
 #endif
 	.ndo_set_features	= fec_set_features,
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	.ndo_vlan_rx_add_vid	= ksz_add_vid,
 	.ndo_vlan_rx_kill_vid	= ksz_kill_vid,
 #endif
@@ -4194,7 +4185,7 @@ fec_probe(struct platform_device *pdev)
 
 	init_completion(&fep->mdio_done);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 #ifdef CONFIG_KSZ8795_EMBEDDED
 	ksz8795_init();
 #endif
@@ -4212,8 +4203,8 @@ fec_probe(struct platform_device *pdev)
 	ret = fec_enet_mii_init(pdev);
 
 // NB: I think this is a KEY code to make the FEC-KSZ9897 link work
-#ifdef HAVE_KSZ_SWITCH
-	fep->len_fec_stats = (ARRAY_SIZE(fec_stats) * sizeof(u64);
+#ifdef CONFIG_KSZ_SWITCH
+	fep->len_fec_stats = (ARRAY_SIZE(fec_stats) * sizeof(u64));
 	fep->hw_priv = fep;
 	if (ret)
 		ret = ksz_fec_sw_chk(fep);
@@ -4260,7 +4251,7 @@ fec_probe(struct platform_device *pdev)
 	}
 
 // NB: I think this is a KEY code to make the FEC-KSZ9897 link work
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	if (fep->port.sw)
 		ret = ksz_fec_sw_init(fep);
 	phy_attached_info(ndev->phydev);
@@ -4283,7 +4274,7 @@ fec_probe(struct platform_device *pdev)
 failed_register:
 	fec_enet_mii_remove(fep);
 // NB: it is possible that the SAMA5D3 relies on this
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	if (fep->phy_node)
 		of_node_put(fep->phy_node);
 #endif
@@ -4325,7 +4316,7 @@ fec_drv_remove(struct platform_device *pdev)
 		return 0;
 	fep = netdev_priv(ndev);
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	if (sw_is_switch(fep->port.sw)) {
 		ksz_fec_sw_exit(fep);
 
@@ -4364,12 +4355,12 @@ next:
 #ifdef CONFIG_KSZ9897_EMBEDDED
 	ksz9897_exit();
 #endif
-#else	// HAVE_KSZ_SWITCH
+#else	// CONFIG_KSZ_SWITCH
 	cancel_work_sync(&fep->tx_timeout_work);
 	fec_ptp_stop(pdev);
 	unregister_netdev(ndev);
 	fec_enet_mii_remove(fep);
-#endif	// HAVE_KSZ_SWITCH
+#endif	// CONFIG_KSZ_SWITCH
 
 	if (fep->reg_phy)
 		regulator_disable(fep->reg_phy);
@@ -4389,7 +4380,7 @@ static int __maybe_unused fec_suspend(struct device *dev)
 	struct fec_enet_private *fep = netdev_priv(ndev);
 	int ret = 0;
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	if (fep != fep->hw_priv)
 		fep = fep->hw_priv;
 #endif
@@ -4445,7 +4436,7 @@ static int __maybe_unused fec_resume(struct device *dev)
 	int ret = 0;
 	int val;
 
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	if (fep != fep->hw_priv)
 		fep = fep->hw_priv;
 #endif
@@ -4548,7 +4539,7 @@ static struct platform_driver fec_driver = {
 	.id_table = fec_devtype,
 	.probe	= fec_probe,
 	.remove	= fec_drv_remove,
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 	.shutdown	= ksz_fec_shutdown,
 #endif
 };

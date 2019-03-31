@@ -5,14 +5,10 @@
  
  * Bogdan Vacaliuc (vacaliucb@ornl.gov) and Edison Fernandez (edison.fernandez@ridgerun.com)
  *
- * //<add the following to fec.c, before fec.h>
+ * //<add the following to fec.h, before struct fec_enet_private>
  * #if defined(CONFIG_KSZ_SWITCH)
- * #define HAVE_KSZ_SWITCH
- * #define DISABLE_PM
  * #include "ksz_fec.h"
  * #endif
- *
- * #include "fec.h"
  *
  * //<add the following to fec.c, after fec.h>
  * #if defined(CONFIG_KSZ_SWITCH)
@@ -21,7 +17,7 @@
  *
  * //<then modify various items in fec.c>
  */
-#ifdef HAVE_KSZ_SWITCH
+#ifdef CONFIG_KSZ_SWITCH
 #include <linux/if_vlan.h>
 
 #if defined(CONFIG_KSZ_SWITCH_EMBEDDED)
@@ -79,4 +75,4 @@ static void get_sysfs_data_(struct net_device *dev,
 #include "../micrel/ksz_spi_net.h"
 #endif	// CONFIG_KSZ_SWITCH_EMBEDDED
 
-#endif	// HAVE_KSZ_SWITCH
+#endif	// CONFIG_KSZ_SWITCH
