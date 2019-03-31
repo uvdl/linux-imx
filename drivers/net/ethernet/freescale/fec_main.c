@@ -73,7 +73,10 @@
 #if defined(CONFIG_KSZ_SWITCH)
 #define HAVE_KSZ_SWITCH
 #define DISABLE_PM
-#include "ksz_fec.h"
+#ifndef CONFIG_HAVE_KSZ9897
+#warn "CONFIG_HAVE_KSZ9897 should have been defined at this point.  Check kernel config."
+#define CONFIG_HAVE_KSZ9897
+#endif#include "ksz_fec.h"
 #endif
 
 #include "fec.h"
