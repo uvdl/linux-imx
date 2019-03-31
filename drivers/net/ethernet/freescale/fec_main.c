@@ -72,6 +72,10 @@
 
 #include "fec.h"
 
+#if defined(CONFIG_KSZ_SWITCH)
+#define DISABLE_PM
+#endif
+
 static void set_multicast_list(struct net_device *ndev);
 static void fec_enet_itr_coal_init(struct net_device *ndev);
 
@@ -1841,7 +1845,6 @@ static void fec_enet_adjust_link(struct net_device *ndev)
 		phy_print_status(phy_dev);
 }
 
-#ifndef CONFIG_HAVE_KSZ9897
 static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 {
 	struct fec_enet_private *fep = bus->priv;
@@ -1927,7 +1930,6 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 
 	return ret;
 }
-#endif /* CONFIG_HAVE_KSZ9897 */
 
 static int fec_enet_clk_enable(struct net_device *ndev, bool enable)
 {
@@ -2020,6 +2022,10 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	int dev_id = fep->dev_id;
 
 	netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
+
+#ifdef DISABLE_PM
+	pinctrl_pm_select_default_state(&fep->pdev->dev);
+#endif
 
 	if (fep->phy_node) {
 		netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
@@ -2196,6 +2202,10 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 	fep->mii_bus->priv = fep;
 	fep->mii_bus->parent = &pdev->dev;
 
+#ifdef CONFIG_KSZ_SMI
+	fep->mii_bus->phy_mask = ~((1 << 6) - 1);
+#endif
+
 	{
 		struct mii_bus *bus = fep->mii_bus;
 		dev_err(&pdev->dev,
@@ -2210,7 +2220,15 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 				);
 	}
 
+#ifdef CONFIG_KSZ_SWITCH
+	node = pdev->dev.of_node;
+	/* Below code assumes a regular PHY is specified. */
+	if (node && of_phy_is_fixed_link(node))
+		node = NULL;
+#else
 	node = of_get_child_by_name(pdev->dev.of_node, "mdio");
+#endif
+
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, node(mdio) = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, node ? node->name : "(null)");
 	if (node) {
@@ -2233,6 +2251,24 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 
 	mii_cnt++;
 
+#ifdef CONFIG_KSZ_SMI
+	err = fec_enet_mii_probe(ndev);
+
+	if (err) {
+		err = smi_probe(fep->pdev, fep->mii_bus, 0);
+
+		/* Return an error so that switch driver is connected. */
+		if (!err) {
+			dev_err(&pdev->dev, "smi_probe %s fail\n",
+				fep->mii_bus->name);
+			return -ENXIO;
+		}
+	}
+#endif
+
+	if (err)
+		goto err_out_unregister_bus;
+
 	/* save fec0 mii_bus */
 	if (fep->quirks & FEC_QUIRK_SINGLE_MDIO) {
 		fec0_mii_bus = fep->mii_bus;
@@ -2244,6 +2280,11 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 
 	return 0;
 
+err_out_unregister_bus:
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+	mdiobus_unregister(fep->mii_bus);
+	mii_cnt--;
 err_out_free_mdiobus:
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
@@ -2292,6 +2333,9 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev, int phy_mode)
 		dev_err(&pdev->dev,"Could not get SW\n");
 		return -EINVAL;
 	}
+
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	phy_detach(phydev);
 
@@ -2538,8 +2582,6 @@ static const struct fec_stat {
 	{ "IEEE_rx_octets_ok", IEEE_R_OCTETS_OK },
 };
 
-#define FEC_STATS_SIZE		(ARRAY_SIZE(fec_stats) * sizeof(u64))
-
 static void fec_enet_update_ethtool_stats(struct net_device *dev)
 {
 	struct fec_enet_private *fep = netdev_priv(dev);
@@ -2557,7 +2599,7 @@ static void fec_enet_get_ethtool_stats(struct net_device *dev,
 	if (netif_running(dev))
 		fec_enet_update_ethtool_stats(dev);
 
-	memcpy(data, fep->ethtool_stats, FEC_STATS_SIZE);
+	memcpy(data, fep->ethtool_stats, (ARRAY_SIZE(fec_stats) * sizeof(u64)));
 }
 
 static void fec_enet_get_strings(struct net_device *netdev,
@@ -2584,7 +2626,6 @@ static int fec_enet_get_sset_count(struct net_device *dev, int sset)
 }
 
 #else	/* !defined(CONFIG_M5272) */
-#define FEC_STATS_SIZE	0
 static inline void fec_enet_update_ethtool_stats(struct net_device *dev)
 {
 }
@@ -3207,8 +3248,10 @@ err_enet_alloc:
 clk_enable:
 	pm_runtime_mark_last_busy(&fep->pdev->dev);
 	pm_runtime_put_autosuspend(&fep->pdev->dev);
+#ifndef DISABLE_PM
 	if (!fep->mii_bus_share)
 		pinctrl_pm_select_sleep_state(&fep->pdev->dev);
+#endif
 	return ret;
 }
 
@@ -3234,11 +3277,16 @@ fec_enet_close(struct net_device *ndev)
 	fec_enet_update_ethtool_stats(ndev);
 
 	fec_enet_clk_enable(ndev, false);
+#ifndef DISABLE_PM
 	pm_qos_remove_request(&fep->pm_qos_req);
 	if (!fep->mii_bus_share)
 		pinctrl_pm_select_sleep_state(&fep->pdev->dev);
 	pm_runtime_mark_last_busy(&fep->pdev->dev);
 	pm_runtime_put_autosuspend(&fep->pdev->dev);
+#else
+	pm_qos_remove_request(&fep->pm_qos_req);
+	pm_runtime_mark_last_busy(&fep->pdev->dev);
+#endif
 
 	fec_enet_free_buffers(ndev);
 
@@ -3725,7 +3773,7 @@ fec_probe(struct platform_device *pdev)
 
 	/* Init network device */
 	ndev = alloc_etherdev_mqs(sizeof(struct fec_enet_private) +
-				  FEC_STATS_SIZE, num_tx_qs, num_rx_qs);
+				  (ARRAY_SIZE(fec_stats) * sizeof(u64)), num_tx_qs, num_rx_qs);
 	if (!ndev)
 		return -ENOMEM;
 
@@ -4085,7 +4133,9 @@ fec_probe(struct platform_device *pdev)
 	/* Carrier starts down, phylib will bring it up */
 	netif_carrier_off(ndev);
 	fec_enet_clk_enable(ndev, false);
+#ifndef DISABLE_PM
 	pinctrl_pm_select_sleep_state(&pdev->dev);
+#endif
 
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
@@ -4103,6 +4153,15 @@ fec_probe(struct platform_device *pdev)
 		fep->fixups = of_fec_enet_parse_fixup(np);
 		fec_enet_register_fixup(ndev);
 	}
+
+#ifdef CONFIG_KSZ_SWITCH
+	//if (fep->port.sw)
+	//	ret = ksz_fec_sw_init(fep);
+	if (ndev->phydev)
+		phy_attached_info(ndev->phydev);
+	else
+		netdev_info(ndev, "deferring PHY attachment (%d)\n", ret);
+#endif
 
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
@@ -4131,6 +4190,11 @@ failed_register:
 dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	fec_enet_mii_remove(fep);
+// NB: it is possible that the SAMA5D3 relies on this
+#ifdef CONFIG_KSZ_SWITCH
+	if (fep->phy_node)
+		of_node_put(fep->phy_node);
+#endif
 failed_mii_init:
 dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
@@ -4181,8 +4245,24 @@ static int
 fec_drv_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
-	struct fec_enet_private *fep = netdev_priv(ndev);
+	struct fec_enet_private *fep;
 	struct device_node *np = pdev->dev.of_node;
+
+	// NB: possible NULL-dereference danger in original code
+	if (!ndev)
+		return 0;
+	fep = netdev_priv(ndev);
+
+    dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
+ifdef CONFIG_KSZ_SWITCH
+	if (ndev->phydev) {
+        dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+		phy_disconnect(ndev->phydev);
+    }
+#endif	// CONFIG_KSZ_SWITCH
 
 	cancel_work_sync(&fep->tx_timeout_work);
 	fec_ptp_stop(pdev);
@@ -4192,7 +4272,9 @@ fec_drv_remove(struct platform_device *pdev)
 		regulator_disable(fep->reg_phy);
 	if (of_phy_is_fixed_link(np))
 		of_phy_deregister_fixed_link(np);
-	of_node_put(fep->phy_node);
+	// NB: possible NULL-dereference danger in original code
+	if (fep->phy_node)
+	   of_node_put(fep->phy_node);
 	free_netdev(ndev);
 
 	return 0;
@@ -4216,7 +4298,9 @@ static int __maybe_unused fec_suspend(struct device *dev)
 		fec_stop(ndev);
 		if (!(fep->wol_flag & FEC_WOL_FLAG_ENABLE)) {
 			fec_irqs_disable(ndev);
+#ifndef DISABLE_PM
 			pinctrl_pm_select_sleep_state(&fep->pdev->dev);
+#endif
 		} else {
 			disable_irq(fep->wake_irq);
 			enable_irq_wake(fep->wake_irq);
@@ -4228,7 +4312,9 @@ static int __maybe_unused fec_suspend(struct device *dev)
 		if (ret < 0)
 			return ret;
 	} else if (fep->mii_bus_share && !ndev->phydev) {
+#ifndef DISABLE_PM
 		pinctrl_pm_select_sleep_state(&fep->pdev->dev);
+#endif
 	}
 	rtnl_unlock();
 
