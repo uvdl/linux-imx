@@ -47,9 +47,13 @@
 	ksz9893: ksz9893@0 {
 		compatible = "microchip,ksz9893";
 		reg = <0>;
+		phy-mode = "rgmii";
+
 		spi-max-frequency = <40000000>;
 		spi-cpha;
 		spi-cpol;
+		interrupt-parent = <&gpio4>;
+		interrupts = <14 IRQ_TYPE_LEVEL_LOW>;
 		status = "okay";
 		ports {
 			#address-cells = <1>;
@@ -104,7 +108,7 @@
 
 &touch {
 	interrupt-parent = <&gpio1>;
-	interrupts = <4 0>;
+	interrupts = <1 0>;
 };
 
 &mxcfb1 {
