@@ -3780,8 +3780,8 @@ fec_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 	}
-	// fep->phy_node = phy_node;
-	fep->phy_node = NULL; /*Testing*/
+	fep->phy_node = phy_node;
+	// fep->phy_node = NULL; /*Testing*/
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
