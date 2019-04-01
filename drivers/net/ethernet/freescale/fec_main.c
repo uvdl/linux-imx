@@ -1856,7 +1856,7 @@ static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 	ret = pm_runtime_get_sync(dev);
 	if (ret < 0) {
 		dev_err(dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- mii_id = %d, regnum = %d, ret = %d\n", __FILE__, __FUNCTION_, __LINE__, mii_id, regnum, ret);
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- mii_id = %d, regnum = %d, ret = %d\n", __FILE__, __FUNCTION__, __LINE__, mii_id, regnum, ret);
 		return ret;
 	}
 
@@ -4295,7 +4295,9 @@ static int __maybe_unused fec_suspend(struct device *dev)
 {
 	struct net_device *ndev = dev_get_drvdata(dev);
 	struct fec_enet_private *fep = netdev_priv(ndev);
+#ifndef DISABLE_PM
 	int ret = 0;
+#endif
 
 	rtnl_lock();
 	if (netif_running(ndev)) {
