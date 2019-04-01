@@ -2332,6 +2332,10 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 
 	snprintf(bus_id, MII_BUS_ID_SIZE, "sw.%d", 0);
 	snprintf(phy_id, MII_BUS_ID_SIZE, PHY_ID_FMT, bus_id, phy_addr);
+
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phy_id = %s, phy_mode = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, phy_id, phy_mode);
+
 	phydev = phy_attach(ndev, phy_id, phy_mode);
 
 	dev_err(&pdev->dev,
@@ -2344,11 +2348,11 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	}
 
 	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phydev = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, phydev ? phydev->name : "(null)");
 
-	fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
-
-	phy_detach(phydev);
+	if (phydev) {
+		fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
+		phy_detach(phydev);
 
 	return 0;
 }
