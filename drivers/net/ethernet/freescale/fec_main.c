@@ -1845,6 +1845,7 @@ static void fec_enet_adjust_link(struct net_device *ndev)
 		phy_print_status(phy_dev);
 }
 
+#ifndef CONFIG_HAVE_KSZ9897
 static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 {
 	struct fec_enet_private *fep = bus->priv;
@@ -1933,6 +1934,7 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 
 	return ret;
 }
+#endif /* CONFIG_HAVE_KSZ9897 */
 
 static int fec_enet_clk_enable(struct net_device *ndev, bool enable)
 {
@@ -2110,6 +2112,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	return 0;
 }
 
+#ifndef CONFIG_HAVE_KSZ9897
 static int fec_enet_mii_init(struct platform_device *pdev)
 {
 	static struct mii_bus *fec0_mii_bus;
@@ -2299,6 +2302,7 @@ err_out:
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, err);
 	return err;
 }
+#endif /* CONFIG_HAVE_KSZ9897 */
 
 static void fec_enet_mii_remove(struct fec_enet_private *fep)
 {
@@ -2310,11 +2314,11 @@ static void fec_enet_mii_remove(struct fec_enet_private *fep)
 
 #ifdef CONFIG_HAVE_KSZ9897
 // #include <ksz_cfg_9897.h>
-static int ksz_fec_enet_mii_init(struct platform_device *pdev, int phy_mode)
+static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
-	//struct fec_enet_private *fep = netdev_priv(ndev);
-	//int phy_mode;
+	struct fec_enet_private *fep = netdev_priv(ndev);
+	int phy_mode;
 	char phy_id[MII_BUS_ID_SIZE];
 	char bus_id[MII_BUS_ID_SIZE];
 	struct phy_device *phydev;
@@ -2323,7 +2327,7 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev, int phy_mode)
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
-	//phy_mode = fep->phy_interface;
+	phy_mode = fep->phy_interface;
 	phy_addr = 0; // Lets assume phy_addr is 0 (we should get it from SW)
 
 	snprintf(bus_id, MII_BUS_ID_SIZE, "sw.%d", 0);
@@ -2341,6 +2345,8 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev, int phy_mode)
 
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+
+	fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
 
 	phy_detach(phydev);
 
@@ -4103,31 +4109,19 @@ fec_probe(struct platform_device *pdev)
 	mdelay(100);
 
 #ifdef CONFIG_HAVE_KSZ9897
-	if (of_get_property(np, "have-ksz9897", NULL)){
-		dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
-		ret = ksz_fec_enet_mii_init(pdev, fep->phy_interface);
-		dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, ret = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, ret);
-
-		if (ret)
-			goto failed_mii_init;
-
-		fep->mii_bus->parent = &pdev->dev;
-		ret = mdiobus_register(fep->mii_bus);
-		dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, ret = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, ret);
-
-		if (ret) {
-			mdiobus_free(fep->mii_bus);
-			goto failed_mii_init;
-		} else {
-			mii_cnt++;
-		}
-
-	} else {
-		ret = fec_enet_mii_init(pdev);
-	}
+//	if (of_get_property(np, "have-ksz9897", NULL)){
+	ret = ksz_fec_enet_mii_init(pdev);
+//		fep->mii_bus->parent = &pdev->dev;
+//		ret = mdiobus_register(fep->mii_bus);
+//		if (ret) {
+//			mdiobus_free(fep->mii_bus);
+//			goto failed_mii_init;
+//		} else {
+//			mii_cnt++;
+//		}
+//	} else {
+//		ret = fec_enet_mii_init(pdev);
+//	}
 #else
 	ret = fec_enet_mii_init(pdev);
 #endif  /* CONFIG_HAVE_KSZ9897 */
@@ -4201,8 +4195,11 @@ dev_err(&pdev->dev,
 	fec_enet_mii_remove(fep);
 // NB: it is possible that the SAMA5D3 relies on this
 #ifdef CONFIG_KSZ_SWITCH
-	if (fep->phy_node)
+	if (fep->phy_node) {
+		dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 		of_node_put(fep->phy_node);
+	}
 #endif
 failed_mii_init:
 dev_err(&pdev->dev,
