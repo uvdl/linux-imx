@@ -17014,7 +17014,7 @@ static u16 _rll_shadow[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1
 };
 
-static void _rll_read_report(struct ksz_sw *sw, struct mii_bus *bus, int phy_id, int regnum, int ret)
+static void _rll_read_report(struct sw_priv *sw, struct mii_bus *bus, int phy_id, int regnum, int ret)
 {
     if (regnum > ARRAY_SIZE(_rll_shadow)) {
 		dev_err(sw->dev,
@@ -17028,7 +17028,7 @@ static void _rll_read_report(struct ksz_sw *sw, struct mii_bus *bus, int phy_id,
     }
 }
 
-static void _rll_write_report(struct ksz_sw *sw, struct mii_bus *bus, int phy_id, int regnum, u16 val)
+static void _rll_write_report(struct sw_priv *sw, struct mii_bus *bus, int phy_id, int regnum, u16 val)
 {
     if (regnum > ARRAY_SIZE(_rll_shadow)) {
 		dev_err(sw->dev,
@@ -17049,7 +17049,7 @@ static int ksz_mii_read(struct mii_bus *bus, int phy_id, int regnum)
 	int ret = 0xffff;
 
 	if (phy_id > sw->mib_port_cnt + 1) {
-		dev_err(sw->dev,
+		dev_err(ks->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d - phy_id > %d, return 0xffff\n", __FILE__, __FUNCTION__, __LINE__, phy_id, regnum, sw->mib_port_cnt + 1);
 		return 0xffff;
 	}
@@ -17076,7 +17076,7 @@ static int ksz_mii_read(struct mii_bus *bus, int phy_id, int regnum)
 	sw->ops->release(sw);
 
     /* DEBUG */
-    _rll_read_report(sw, bus, phy_id, regnum, ret);
+    _rll_read_report(ks, bus, phy_id, regnum, ret);
 
 	return ret;
 }  /* ksz_mii_read */
@@ -17087,13 +17087,13 @@ static int ksz_mii_write(struct mii_bus *bus, int phy_id, int regnum, u16 val)
 	struct ksz_sw *sw = &ks->sw;
 
 	if (phy_id > sw->mib_port_cnt + 1) {
-		dev_err(sw->dev,
+		dev_err(ks->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d - phy_id > %d, return -EINVAL\n", __FILE__, __FUNCTION__, __LINE__, phy_id, regnum, sw->mib_port_cnt + 1);
 		return -EINVAL;
     }
 
     /* DEBUG */
-    _rll_write_report(sw, bus, phy_id, regnum, val);
+    _rll_write_report(ks, bus, phy_id, regnum, val);
 
 	sw->ops->acquire(sw);
 	if (regnum < 11) {
