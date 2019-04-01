@@ -2353,6 +2353,7 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	if (phydev) {
 		fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
 		phy_detach(phydev);
+	}
 
 	return 0;
 }
