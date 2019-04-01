@@ -1853,12 +1853,12 @@ static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 	uint int_events;
 	int ret = 0;
 
-	dev_err(dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- mii_id = %d, regnum = %d\n", __FILE__, __FUNCTION__, __LINE__, mii_id, regnum);
-
 	ret = pm_runtime_get_sync(dev);
-	if (ret < 0)
+	if (ret < 0) {
+		dev_err(dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- mii_id = %d, regnum = %d, ret = %d\n", __FILE__, __FUNCTION_, __LINE__, mii_id, regnum, ret);
 		return ret;
+	}
 
 	fep->mii_timeout = 0;
 	reinit_completion(&fep->mdio_done);
@@ -1885,7 +1885,9 @@ static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 
 out:
 	pm_runtime_mark_last_busy(dev);
+#ifndef DISABLE_PM
 	pm_runtime_put_autosuspend(dev);
+#endif
 
 	return ret;
 }
@@ -1898,13 +1900,12 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 	unsigned long time_left;
 	int ret;
 
-	dev_err(dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- mii_id = %d, regnum = %d, value = %d\n", __FILE__, __FUNCTION__, __LINE__, mii_id, regnum, value);
-
 	ret = pm_runtime_get_sync(dev);
-	if (ret < 0)
+	if (ret < 0) {
+		dev_err(dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- mii_id = %d, regnum = %d, value = %d, ret = %d\n", __FILE__, __FUNCTION__, __LINE__, mii_id, regnum, value, ret);
 		return ret;
-	else
+	} else
 		ret = 0;
 
 	fep->mii_timeout = 0;
@@ -1926,7 +1927,9 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 	}
 
 	pm_runtime_mark_last_busy(dev);
+#ifndef DISABLE_PM
 	pm_runtime_put_autosuspend(dev);
+#endif
 
 	return ret;
 }
@@ -2008,7 +2011,9 @@ static int fec_restore_mii_bus(struct net_device *ndev)
 	writel(FEC_ENET_ETHEREN, fep->hwp + FEC_ECNTRL);
 
 	pm_runtime_mark_last_busy(&fep->pdev->dev);
+#ifndef DISABLE_PM
 	pm_runtime_put_autosuspend(&fep->pdev->dev);
+#endif
 	return 0;
 }
 
@@ -3247,8 +3252,8 @@ err_enet_alloc:
 	fec_enet_clk_enable(ndev, false);
 clk_enable:
 	pm_runtime_mark_last_busy(&fep->pdev->dev);
-	pm_runtime_put_autosuspend(&fep->pdev->dev);
 #ifndef DISABLE_PM
+	pm_runtime_put_autosuspend(&fep->pdev->dev);
 	if (!fep->mii_bus_share)
 		pinctrl_pm_select_sleep_state(&fep->pdev->dev);
 #endif
@@ -3996,8 +4001,10 @@ fec_probe(struct platform_device *pdev)
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
+#ifndef DISABLE_PM
 	pm_runtime_set_autosuspend_delay(&pdev->dev, FEC_MDIO_PM_TIMEOUT);
 	pm_runtime_use_autosuspend(&pdev->dev);
+#endif
 	pm_runtime_get_noresume(&pdev->dev);
 	pm_runtime_set_active(&pdev->dev);
 	pm_runtime_enable(&pdev->dev);
@@ -4179,7 +4186,9 @@ fec_probe(struct platform_device *pdev)
 	INIT_WORK(&fep->tx_timeout_work, fec_enet_timeout_work);
 
 	pm_runtime_mark_last_busy(&pdev->dev);
+#ifndef DISABLE_PM
 	pm_runtime_put_autosuspend(&pdev->dev);
+#endif
 
 	dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
@@ -4210,7 +4219,9 @@ dev_err(&pdev->dev,
 failed_reset:
 dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+#ifndef DISABLE_PM
 	pm_runtime_disable(&pdev->dev);
+#endif
 failed_regulator:
 dev_err(&pdev->dev,
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
@@ -4306,11 +4317,15 @@ static int __maybe_unused fec_suspend(struct device *dev)
 			enable_irq_wake(fep->wake_irq);
 		}
 		fec_enet_clk_enable(ndev, false);
+#ifndef DISABLE_PM
 		fep->active_in_suspend = !pm_runtime_status_suspended(dev);
 		if (fep->active_in_suspend)
 			ret = pm_runtime_force_suspend(dev);
 		if (ret < 0)
 			return ret;
+#else
+		fep->active_in_suspend = true;
+#endif
 	} else if (fep->mii_bus_share && !ndev->phydev) {
 #ifndef DISABLE_PM
 		pinctrl_pm_select_sleep_state(&fep->pdev->dev);
