@@ -17008,17 +17008,50 @@ static void sw_r_phy(struct ksz_sw *sw, u16 phy, u16 reg, u16 *val)
 	*val = ret;
 }  /* sw_r_phy */
 
+/* DEBUG */
+static u16 _rll_shadow[] = {
+	-1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1
+};
+
+static void _rll_read_report(struct sw_priv *sw, struct mii_bus *bus, int phy_id, int regnum, int ret)
+{
+	if (regnum > ARRAY_SIZE(_rll_shadow)) {
+		dev_err(sw->dev,
+				">>> %s -- bus = %s, phy_id = %d, regnum = %d, (*) -> 0x%04x\n",
+				"read", bus->name, phy_id, regnum, ret);
+	} else if ( _rll_shadow[regnum] != ret ) {
+		dev_err(sw->dev,
+				">>> %s -- bus = %s, phy_id = %d, regnum = %d, 0x%04x -> 0x%04x\n",
+				"read", bus->name, phy_id, regnum, _rll_shadow[regnum], ret);
+		_rll_shadow[regnum] = ret & 0xFFFF;
+	}
+}
+
+static void _rll_write_report(struct sw_priv *sw, struct mii_bus *bus, int phy_id, int regnum, u16 val)
+{
+	if (regnum > ARRAY_SIZE(_rll_shadow)) {
+		dev_err(sw->dev,
+				">>> %s -- bus = %s, phy_id = %d, regnum = %d(*), 0x%04x -> (*)\n",
+				"write", bus->name, phy_id, regnum, val);
+	} else if ( _rll_shadow[regnum] != val ) {
+		dev_err(sw->dev,
+				">>> %s -- bus = %s, phy_id = %d, regnum = %d, 0x%04x -> 0x%04x\n",
+				"write", bus->name, phy_id, regnum, _rll_shadow[regnum], val);
+		_rll_shadow[regnum] = val;
+	}
+}
+
 static int ksz_mii_read(struct mii_bus *bus, int phy_id, int regnum)
 {
 	struct sw_priv *ks = bus->priv;
 	struct ksz_sw *sw = &ks->sw;
 	int ret = 0xffff;
 
-	dev_err(NULL,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id, regnum);
-
-	if (phy_id > sw->mib_port_cnt + 1)
+	if (phy_id > sw->mib_port_cnt + 1) {
+		dev_err(ks->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d - phy_id > %d, return 0xffff\n", __FILE__, __FUNCTION__, __LINE__, phy_id, regnum, sw->mib_port_cnt + 1);
 		return 0xffff;
+	}
 
 	sw->ops->acquire(sw);
 	ret = 0;
@@ -17040,6 +17073,10 @@ static int ksz_mii_read(struct mii_bus *bus, int phy_id, int regnum)
 		ret = data;
 	}
 	sw->ops->release(sw);
+
+	/* DEBUG */
+	_rll_read_report(ks, bus, phy_id, regnum, ret);
+
 	return ret;
 }  /* ksz_mii_read */
 
@@ -17048,11 +17085,14 @@ static int ksz_mii_write(struct mii_bus *bus, int phy_id, int regnum, u16 val)
 	struct sw_priv *ks = bus->priv;
 	struct ksz_sw *sw = &ks->sw;
 
-	dev_err(NULL,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d, value = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id, regnum, val);
-
-	if (phy_id > sw->mib_port_cnt + 1)
+	if (phy_id > sw->mib_port_cnt + 1) {
+		dev_err(ks->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d, value = %d - phy_id > %d, return -EINVAL\n", __FILE__, __FUNCTION__, __LINE__, phy_id, regnum, val, sw->mib_port_cnt + 1);
 		return -EINVAL;
+	}
+
+	/* DEBUG */
+	_rll_write_report(ks, bus, phy_id, regnum, val);
 
 	sw->ops->acquire(sw);
 	if (regnum < 11) {
@@ -18122,27 +18162,34 @@ dbg_msg("port: %x %x %x\n", sw->port_cnt, sw->mib_port_cnt, sw->phy_port_cnt);
 			*data_hi &= ~(PORT_RGMII_ID_IG_ENABLE |
 				PORT_RGMII_ID_EG_ENABLE);
 #ifdef USE_10_MBIT_MODE
+		dev_info(ks->dev, "USE_10_MBIT_MODE");
 		*data_lo &= ~PORT_MII_100MBIT;
 #endif
 #ifdef USE_HALF_DUPLEX
+		dev_info(ks->dev, "USE_HALF_DUPLEX");
 		*data_lo &= ~PORT_MII_FULL_DUPLEX;
 #endif
 #ifdef USE_RGMII_MODE
+		dev_info(ks->dev, "USE_RGMII_MODE");
 		sw_set_gbit(sw, true, data_hi);
 		sw_set_xmii(sw, 3, data_hi);
 #endif
 #ifdef USE_MII_MODE
+		dev_info(ks->dev, "USE_MII_MODE");
 		sw_set_gbit(sw, false, data_hi);
 		sw_set_xmii(sw, 0, data_hi);
 #endif
 #ifdef USE_GMII_MODE
+		dev_info(ks->dev, "USE_GMII_MODE");
 		sw_set_gbit(sw, true, data_hi);
 		sw_set_xmii(sw, 2, data_hi);
 #endif
 #ifdef USE_GMII_100_MODE
+		dev_info(ks->dev, "USE_GMII_100_MODE");
 		sw_set_gbit(sw, false, data_hi);
 #endif
 #ifdef USE_RMII_MODE
+		dev_info(ks->dev, "USE_RMII_MODE");
 		sw_set_gbit(sw, false, data_hi);
 		sw_set_xmii(sw, 1, data_hi);
 #endif
