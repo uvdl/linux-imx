@@ -2348,7 +2348,7 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	}
 
 	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, phydev = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, phydev ? phydev->name : "(null)");
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
 
 	if (phydev) {
 		fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
