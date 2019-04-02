@@ -19,6 +19,10 @@
 #include <linux/ptp_clock_kernel.h>
 #include <linux/timecounter.h>
 
+#ifdef CONFIG_HAVE_KSZ9897
+#include "../micrel/ksz_cfg_9897.h"
+#endif
+
 #if defined(CONFIG_M523x) || defined(CONFIG_M527x) || defined(CONFIG_M528x) || \
     defined(CONFIG_M520x) || defined(CONFIG_M532x) || defined(CONFIG_ARM) || \
     defined(CONFIG_ARM64)
@@ -638,6 +642,12 @@ struct fec_enet_private {
 	int phy_reset_duration;
 
 	u64 ethtool_stats[0];
+
+#ifdef CONFIG_HAVE_KSZ9897
+	struct ksz_port		port;
+	u8			state;
+	int			phy_addr;
+#endif
 };
 
 void fec_ptp_init(struct platform_device *pdev);

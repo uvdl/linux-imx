@@ -72,6 +72,10 @@
 
 #include "fec.h"
 
+#ifdef CONFIG_HAVE_KSZ9897
+#include "../micrel/ksz_cfg_9897.h"
+#endif
+
 static void set_multicast_list(struct net_device *ndev);
 static void fec_enet_itr_coal_init(struct net_device *ndev);
 
@@ -2021,6 +2025,12 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 
 	netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 
+#ifdef CONFIG_HAVE_KSZ9897
+
+	netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
+	phy_dev = ndev->phydev;
+#else
+
 	if (fep->phy_node) {
 		netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 		phy_dev = of_phy_connect(ndev, fep->phy_node,
@@ -2059,6 +2069,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 		phy_dev = phy_connect(ndev, phy_name, &fec_enet_adjust_link,
 				      fep->phy_interface);
 	}
+#endif
 
 	if (IS_ERR(phy_dev)) {
 		netdev_err(ndev, "could not attach to PHY\n");
@@ -2238,8 +2249,44 @@ static void fec_enet_mii_remove(struct fec_enet_private *fep)
 }
 
 #ifdef CONFIG_HAVE_KSZ9897
-// #include <ksz_cfg_9897.h>
-static int ksz_fec_enet_mii_init(struct platform_device *pdev)
+
+static u8 get_priv_state(struct net_device *dev)
+{
+	struct fec_enet_private *fep = netdev_priv(dev);
+
+	return fep->state;
+}  /* get_priv_state */
+
+static void set_priv_state(struct net_device *dev, u8 state)
+{
+	struct fec_enet_private *fep = netdev_priv(dev);
+
+	fep->state = state;
+}  /* set_priv_state */
+
+static struct ksz_port *get_priv_port(struct net_device *dev)
+{
+	struct fec_enet_private *fep = netdev_priv(dev);
+
+	return &fep->port;
+}  /* get_priv_port */
+
+static void prep_sw_first(struct ksz_sw *sw, int *port_count,
+	int *mib_port_count, int *dev_count, char *dev_name)
+{
+	*port_count = 1;
+	*mib_port_count = 1;
+	*dev_count = 1;
+	dev_name[0] = '\0';
+	sw->net_ops->get_state = get_priv_state;
+	sw->net_ops->set_state = set_priv_state;
+	sw->net_ops->get_priv_port = get_priv_port;
+	// sw->net_ops->get_ready = get_net_ready;
+	sw->net_ops->setup_special(sw, port_count, mib_port_count, dev_count);
+}
+
+static void prep_sw_dev(struct ksz_sw *sw, struct platform_device *pdev, int i,
+	int port_count, int mib_port_count, char *dev_name)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
 	struct fec_enet_private *fep = netdev_priv(ndev);
@@ -2247,26 +2294,39 @@ static int ksz_fec_enet_mii_init(struct platform_device *pdev)
 	char phy_id[MII_BUS_ID_SIZE];
 	char bus_id[MII_BUS_ID_SIZE];
 	struct phy_device *phydev;
-	int phy_addr;
 
+	fep->phy_addr = sw->net_ops->setup_dev(sw, ndev, dev_name, &fep->port,
+		i, port_count, mib_port_count);
 
 	phy_mode = fep->phy_interface;
-	phy_addr = 0; // Lets assume phy_addr is 0 (we should get it from SW)
-
 	snprintf(bus_id, MII_BUS_ID_SIZE, "sw.%d", 0);
-	snprintf(phy_id, MII_BUS_ID_SIZE, PHY_ID_FMT, bus_id, phy_addr);
+	snprintf(phy_id, MII_BUS_ID_SIZE, PHY_ID_FMT, bus_id, fep->phy_addr);
 	phydev = phy_attach(ndev, phy_id, phy_mode);
-
-	if (IS_ERR(phydev)){
-		dev_err(&pdev->dev,"Could not get SW\n");
-		return -EINVAL;
+	if (!IS_ERR(phydev)) {
+		ndev->phydev = phydev;
+		fep->mii_bus = phydev->mdio.bus;
 	}
-		
-	fep->mii_bus = phydev->mdio.bus; /* Is this the right way to do it? */
+}  /* prep_sw_dev */
 
-	phy_detach(phydev);
+static int ksz_sw_init(struct platform_device *pdev){
+	struct net_device *ndev = platform_get_drvdata(pdev);
+	struct fec_enet_private *fep = netdev_priv(ndev);
+	struct ksz_sw *sw;
+	int port_count;
+	int dev_count;
+	int mib_port_count;
+	char dev_label[IFNAMSIZ];
 
-	return 0;
+	sw = fep->port.sw;
+
+	prep_sw_first(sw, &port_count, &mib_port_count, &dev_count, dev_label);
+
+	strlcpy(dev_label, ndev->name, IFNAMSIZ);
+
+	prep_sw_dev(sw, pdev, 0, port_count, mib_port_count, dev_label);
+
+	if (ndev->phydev->mdio.bus)
+		ndev->phydev->adjust_link = fec_enet_adjust_link;
 }
 #endif /* CONFIG_HAVE_KSZ9897 */
 
@@ -4014,7 +4074,7 @@ fec_probe(struct platform_device *pdev)
 	mdelay(100);
 
 #ifdef CONFIG_HAVE_KSZ9897
-	ret = ksz_fec_enet_mii_init(pdev);
+	ret = ksz_sw_init(pdev);
 #else
 	ret = fec_enet_mii_init(pdev);
 #endif
