@@ -195,8 +195,6 @@ static void spi_wrreg(struct sw_priv *ks, u32 addr, void *txb, size_t txl)
 	int ret;
 	struct ksz_sw *sw = &ks->sw;
 
-	pr_alert(">>>>>>>>>>>>>>> %s -> (%s):%d -- addr = %d, size = %d\n", __FILE__, __FUNCTION__, __LINE__, addr, txl);
-
 	if (!(sw->features & NEW_CAP)) {
 		u32 len = (addr & 3) + txl;
 
@@ -346,8 +344,6 @@ static void spi_rdreg(struct sw_priv *ks, u32 addr, void *rxb, void **rx,
 	struct spi_transfer *xfer;
 	struct spi_message *msg;
 	int ret;
-
-	pr_alert(">>>>>>>>>>>>>>> %s -> (%s):%d -- addr = %d, size = %d\n", __FILE__, __FUNCTION__, __LINE__, addr, rxl);
 
 #ifdef DEBUG
 	if (!mutex_is_locked(&ks->lock))
