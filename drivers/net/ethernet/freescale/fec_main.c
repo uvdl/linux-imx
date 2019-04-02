@@ -2016,18 +2016,17 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 {
 	struct fec_enet_private *fep = netdev_priv(ndev);
 	struct phy_device *phy_dev = NULL;
+
+#ifdef CONFIG_HAVE_KSZ9897
+	netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
+	phy_dev = ndev->phydev;
+#else
 	char mdio_bus_id[MII_BUS_ID_SIZE];
 	char phy_name[MII_BUS_ID_SIZE + 3];
 	int phy_id;
 	int dev_id = fep->dev_id;
 
 	netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
-
-#ifdef CONFIG_HAVE_KSZ9897
-
-	netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
-	phy_dev = ndev->phydev;
-#else
 
 	if (fep->phy_node) {
 		netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
@@ -2095,7 +2094,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	return 0;
 }
 
-static int fec_enet_mii_init(struct platform_device *pdev)
+static int __maybe_unused fec_enet_mii_init(struct platform_device *pdev)
 {
 	static struct mii_bus *fec0_mii_bus;
 	static int *fec_mii_bus_share;

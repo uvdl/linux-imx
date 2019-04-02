@@ -128,9 +128,10 @@ static int ksz_fec_sw_chk(struct fec_enet_private *fep)
 
 static void fec_enet_adjust_link(struct net_device *ndev);
 
-static int ksz_fec_sw_init(struct fec_enet_private *fep)
+static int __maybe_unused ksz_fec_sw_init(struct platform_device *pdev)
 {
-	struct net_device *ndev = fep->netdev;
+	struct net_device *ndev = platform_get_drvdata(pdev);
+	struct fec_enet_private *fep = netdev_priv(ndev);
 	struct ksz_sw *sw;
 	int ret;
 	int port_count;
