@@ -19,8 +19,8 @@
 #include <linux/ptp_clock_kernel.h>
 #include <linux/timecounter.h>
 
-#ifdef CONFIG_HAVE_KSZ9897
-#include "../micrel/ksz_cfg_9897.h"
+#if defined(CONFIG_KSZ_SWITCH)
+#include "ksz_fec.h"
 #endif
 
 #if defined(CONFIG_M523x) || defined(CONFIG_M527x) || defined(CONFIG_M528x) || \

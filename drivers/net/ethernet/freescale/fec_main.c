@@ -72,8 +72,8 @@
 
 #include "fec.h"
 
-#ifdef CONFIG_HAVE_KSZ9897
-#include "../micrel/ksz_cfg_9897.h"
+#if defined(CONFIG_KSZ_SWITCH)
+#include "ksz_fec.c"
 #endif
 
 static void set_multicast_list(struct net_device *ndev);
@@ -1845,7 +1845,6 @@ static void fec_enet_adjust_link(struct net_device *ndev)
 		phy_print_status(phy_dev);
 }
 
-#ifndef CONFIG_HAVE_KSZ9897
 static int fec_enet_mdio_read(struct mii_bus *bus, int mii_id, int regnum)
 {
 	struct fec_enet_private *fep = bus->priv;
@@ -1931,7 +1930,6 @@ static int fec_enet_mdio_write(struct mii_bus *bus, int mii_id, int regnum,
 
 	return ret;
 }
-#endif /* CONFIG_HAVE_KSZ9897 */
 
 static int fec_enet_clk_enable(struct net_device *ndev, bool enable)
 {
@@ -2097,7 +2095,6 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	return 0;
 }
 
-#ifndef CONFIG_HAVE_KSZ9897
 static int fec_enet_mii_init(struct platform_device *pdev)
 {
 	static struct mii_bus *fec0_mii_bus;
@@ -2238,7 +2235,6 @@ err_out:
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s, err = %d\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, err);
 	return err;
 }
-#endif /* CONFIG_HAVE_KSZ9897 */
 
 static void fec_enet_mii_remove(struct fec_enet_private *fep)
 {
@@ -2247,88 +2243,6 @@ static void fec_enet_mii_remove(struct fec_enet_private *fep)
 		mdiobus_free(fep->mii_bus);
 	}
 }
-
-#ifdef CONFIG_HAVE_KSZ9897
-
-static u8 get_priv_state(struct net_device *dev)
-{
-	struct fec_enet_private *fep = netdev_priv(dev);
-
-	return fep->state;
-}  /* get_priv_state */
-
-static void set_priv_state(struct net_device *dev, u8 state)
-{
-	struct fec_enet_private *fep = netdev_priv(dev);
-
-	fep->state = state;
-}  /* set_priv_state */
-
-static struct ksz_port *get_priv_port(struct net_device *dev)
-{
-	struct fec_enet_private *fep = netdev_priv(dev);
-
-	return &fep->port;
-}  /* get_priv_port */
-
-static void prep_sw_first(struct ksz_sw *sw, int *port_count,
-	int *mib_port_count, int *dev_count, char *dev_name)
-{
-	*port_count = 1;
-	*mib_port_count = 1;
-	*dev_count = 1;
-	dev_name[0] = '\0';
-	sw->net_ops->get_state = get_priv_state;
-	sw->net_ops->set_state = set_priv_state;
-	sw->net_ops->get_priv_port = get_priv_port;
-	// sw->net_ops->get_ready = get_net_ready;
-	sw->net_ops->setup_special(sw, port_count, mib_port_count, dev_count);
-}
-
-static void prep_sw_dev(struct ksz_sw *sw, struct platform_device *pdev, int i,
-	int port_count, int mib_port_count, char *dev_name)
-{
-	struct net_device *ndev = platform_get_drvdata(pdev);
-	struct fec_enet_private *fep = netdev_priv(ndev);
-	int phy_mode;
-	char phy_id[MII_BUS_ID_SIZE];
-	char bus_id[MII_BUS_ID_SIZE];
-	struct phy_device *phydev;
-
-	fep->phy_addr = sw->net_ops->setup_dev(sw, ndev, dev_name, &fep->port,
-		i, port_count, mib_port_count);
-
-	phy_mode = fep->phy_interface;
-	snprintf(bus_id, MII_BUS_ID_SIZE, "sw.%d", 0);
-	snprintf(phy_id, MII_BUS_ID_SIZE, PHY_ID_FMT, bus_id, fep->phy_addr);
-	phydev = phy_attach(ndev, phy_id, phy_mode);
-	if (!IS_ERR(phydev)) {
-		ndev->phydev = phydev;
-		fep->mii_bus = phydev->mdio.bus;
-	}
-}  /* prep_sw_dev */
-
-static int ksz_sw_init(struct platform_device *pdev){
-	struct net_device *ndev = platform_get_drvdata(pdev);
-	struct fec_enet_private *fep = netdev_priv(ndev);
-	struct ksz_sw *sw;
-	int port_count;
-	int dev_count;
-	int mib_port_count;
-	char dev_label[IFNAMSIZ];
-
-	sw = fep->port.sw;
-
-	prep_sw_first(sw, &port_count, &mib_port_count, &dev_count, dev_label);
-
-	strlcpy(dev_label, ndev->name, IFNAMSIZ);
-
-	prep_sw_dev(sw, pdev, 0, port_count, mib_port_count, dev_label);
-
-	if (ndev->phydev->mdio.bus)
-		ndev->phydev->adjust_link = fec_enet_adjust_link;
-}
-#endif /* CONFIG_HAVE_KSZ9897 */
 
 static void fec_enet_get_drvinfo(struct net_device *ndev,
 				 struct ethtool_drvinfo *info)
@@ -4076,7 +3990,7 @@ fec_probe(struct platform_device *pdev)
 	mdelay(100);
 
 #ifdef CONFIG_HAVE_KSZ9897
-	ret = ksz_sw_init(pdev);
+	ret = ksz_fec_sw_init(pdev);
 #else
 	ret = fec_enet_mii_init(pdev);
 #endif
@@ -4108,8 +4022,12 @@ fec_probe(struct platform_device *pdev)
 		fec_enet_register_fixup(ndev);
 	}
 
-	dev_err(&pdev->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s\n", __FILE__, __FUNCTION__, __LINE__, pdev->name);
+#ifdef CONFIG_KSZ_SWITCH
+	if (ndev->phydev)
+		phy_attached_info(ndev->phydev);
+	else
+		netdev_info(ndev, "deferring PHY attachment (%d)\n", ret);
+#endif
 
 	device_init_wakeup(&ndev->dev, fep->wol_flag &
 			   FEC_WOL_HAS_MAGIC_PACKET);
@@ -4185,9 +4103,13 @@ static int
 fec_drv_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
-	struct fec_enet_private *fep = netdev_priv(ndev);
+	struct fec_enet_private *fep;
 	struct device_node *np = pdev->dev.of_node;
 
+	// NB: possible NULL-dereference danger in original code
+	if (!ndev)
+		return 0;
+	fep = netdev_priv(ndev);
 	cancel_work_sync(&fep->tx_timeout_work);
 	fec_ptp_stop(pdev);
 	unregister_netdev(ndev);
@@ -4196,7 +4118,9 @@ fec_drv_remove(struct platform_device *pdev)
 		regulator_disable(fep->reg_phy);
 	if (of_phy_is_fixed_link(np))
 		of_phy_deregister_fixed_link(np);
-	of_node_put(fep->phy_node);
+	// NB: possible NULL-dereference danger in original code
+	if (fep->phy_node)
+		of_node_put(fep->phy_node);
 	free_netdev(ndev);
 
 	return 0;
