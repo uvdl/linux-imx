@@ -124,7 +124,7 @@ static void prep_sw_dev(struct ksz_sw *sw, struct platform_device *pdev, int i,
 		fep->mii_bus->priv = fep;
 		fep->mii_bus->parent = &pdev->dev;
 	}
-	phy_detach(phydev);
+	//phy_detach(phydev);
 }  /* prep_sw_dev */
 
 static int ksz_fec_sw_chk(struct fec_enet_private *fep)
