@@ -17230,7 +17230,7 @@ static int ksz_mii_init(struct sw_priv *ks)
 	snprintf(bus->id, MII_BUS_ID_SIZE, "sw.%d", ks->sw.id);
 	bus->parent = &pdev->dev;
 	//bus->phy_mask = ~((1 << (ks->sw.mib_port_cnt + 2)) - 1);
-	bus->phy_mask = 0xFFFFFFFC;
+	bus->phy_mask = 0xFFFFFFF8;
 	bus->priv = ks;
 
 	for (i = 0; i < PHY_MAX_ADDR; i++)
