@@ -17112,12 +17112,6 @@ static int ksz_mii_write(struct mii_bus *bus, int phy_id, int regnum, u16 val)
 				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, val);
 		return -ENODEV;
 	}
-	if (!ks->link_read) {
-		dev_err(ks->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d, value = 0x%04x - ks->link_read is NULL, return -ENODEV\n",
-				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, val);
-		return -ENODEV;
-	}
 
 	/* DEBUG */
 	_rll_write_report(ks, bus, phy_id, regnum, val);
