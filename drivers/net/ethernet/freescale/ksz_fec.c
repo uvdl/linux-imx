@@ -101,10 +101,11 @@ static void prep_sw_first(struct ksz_sw *sw, int *port_count,
 	sw->net_ops->setup_special(sw, port_count, mib_port_count, dev_count);
 }
 
-static void prep_sw_dev(struct ksz_sw *sw, struct fec_enet_private *fep, int i,
+static void prep_sw_dev(struct ksz_sw *sw, struct platform_device *pdev, int i,
 	int port_count, int mib_port_count, char *dev_name)
 {
-	struct net_device *ndev = fep->netdev;
+	struct net_device *ndev = platform_get_drvdata(pdev);
+	struct fec_enet_private *fep = netdev_priv(ndev);
 	int phy_mode;
 	char phy_id[MII_BUS_ID_SIZE];
 	char bus_id[MII_BUS_ID_SIZE];
@@ -120,6 +121,8 @@ static void prep_sw_dev(struct ksz_sw *sw, struct fec_enet_private *fep, int i,
 	if (!IS_ERR(phydev)) {
 		ndev->phydev = phydev;
 		fep->mii_bus = phydev->mdio.bus;
+		fep->mii_bus->priv = fep;
+		fep->mii_bus->parent = &pdev->dev;
 	}
 }  /* prep_sw_dev */
 
@@ -168,7 +171,7 @@ static int __maybe_unused ksz_fec_sw_init(struct platform_device *pdev)
 	/* Save the base device name. */
 	strlcpy(dev_label, ndev->name, IFNAMSIZ);
 
-	prep_sw_dev(sw, fep, 0, port_count, mib_port_count, dev_label);
+	prep_sw_dev(sw, pdev, 0, port_count, mib_port_count, dev_label);
 
 	/* Only the main one needs to set adjust_link for configuration. */
 	if (ndev->phydev->mdio.bus)
