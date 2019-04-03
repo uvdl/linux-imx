@@ -647,6 +647,8 @@ struct fec_enet_private {
 	struct ksz_port		port;
 	u8			state;
 	int			phy_addr;
+	u8			hw_promisc;
+	struct delayed_work	promisc_reset;
 #endif
 };
 

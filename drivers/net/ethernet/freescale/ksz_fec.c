@@ -24,6 +24,17 @@ static inline int sw_is_switch(struct ksz_sw *sw)
 	return sw != NULL;
 }
 
+static void set_multicast_list(struct net_device *ndev);
+
+static void promisc_reset_work(struct work_struct *work)
+{
+	struct delayed_work *dwork = to_delayed_work(work);
+	struct fec_enet_private *fep = container_of(dwork, struct fec_enet_private, promisc_reset);
+
+	fep->hw_promisc = 0;
+	fep->netdev->flags &= IFF_PROMISC;
+	set_multicast_list(fep->netdev);
+}
 static struct ksz_sw *check_avail_switch(struct net_device *netdev, int id)
 {
 	int phy_mode;
@@ -147,12 +158,31 @@ static int __maybe_unused ksz_fec_sw_init(struct platform_device *pdev)
 
 	prep_sw_first(sw, &port_count, &mib_port_count, &dev_count, dev_label);
 
+	/* The main switch phydev will not be attached. */
+	if (sw->dev_offset) {
+		struct phy_device *phydev = sw->phy[0];
+
+		phydev->interface = fep->phy_interface;
+	}
+
+	/* Save the base device name. */
 	strlcpy(dev_label, ndev->name, IFNAMSIZ);
 
 	prep_sw_dev(sw, fep, 0, port_count, mib_port_count, dev_label);
 
+	/* Only the main one needs to set adjust_link for configuration. */
 	if (ndev->phydev->mdio.bus)
 		ndev->phydev->adjust_link = fec_enet_adjust_link;
+
+	//fep->link = 0;
+	//fep->speed = 0;
+	//fep->full_duplex = -1;
+
+	INIT_DELAYED_WORK(&fep->promisc_reset, promisc_reset_work);
+
+	if (dev_count > 1) {
+		netdev_err(ndev, "dev_count > 1; if kernel panics in worker_thread then more code is needed here...\n");
+	}
 
 	return 0;
 }
