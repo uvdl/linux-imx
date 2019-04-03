@@ -403,7 +403,6 @@ static int __maybe_unused ksz_fec_sw_init(struct platform_device *pdev)
 	struct fec_enet_private *hw_priv;
 	struct net_device *dev;
 	struct net_device *main_dev;
-	struct platform_device *pdev;
 	netdev_features_t features;
 
 	sw = fep->port.sw;
@@ -478,9 +477,9 @@ static int __maybe_unused ksz_fec_sw_init(struct platform_device *pdev)
 
 		SET_NETDEV_DEV(dev, &pdev->dev);
 
-		prep_sw_dev(sw, fep, i, port_count, mib_port_count, dev_label);
+		prep_sw_dev(sw, pdev, i, port_count, mib_port_count, dev_label);
 		if (ndev->phydev->mdio.bus)
-			ndev->phydev->adjust_link = fec_restart;
+			ndev->phydev->adjust_link = fec_enet_adjust_link;
 
 		err = register_netdev(dev);
 		if (err) {
