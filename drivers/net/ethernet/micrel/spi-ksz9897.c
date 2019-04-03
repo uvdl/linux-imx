@@ -22,11 +22,11 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#if 1
+#if 0
 #define DEBUG
 #define DBG
 #define DEBUG_MSG
-#if 1
+#if 0
 #define DEBUG_PHY
 #define DBG_LINK
 #endif
