@@ -17048,15 +17048,23 @@ static int ksz_mii_read(struct mii_bus *bus, int phy_id, int regnum)
 	int ret = 0xffff;
 
 	if (!ks) {
-		pr_err("ksz_mii_read: bus->priv is NULL - NOP");
-		return 0xffff;
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d - bus->priv is NULL, return 0x%04x\n",
+				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, ret);
+		return ret;
 	}
 	sw = &ks->sw;
-
-	if (phy_id > sw->mib_port_cnt + 1) {
+	if (!sw->ops) {
 		dev_err(ks->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d - phy_id > %d, return 0xffff\n", __FILE__, __FUNCTION__, __LINE__, phy_id, regnum, sw->mib_port_cnt + 1);
-		return 0xffff;
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d - sw->ops is NULL, return 0x%04x\n",
+				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, ret);
+		return ret;
+	}
+	if (phy_id >= ARRAY_SIZE(ks->ports) || phy_id >= sw->mib_port_cnt || phy_id >= ARRAY_SIZE(sw->phy)) {
+		dev_err(ks->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d - phy_id >= (%d,%d,%d), return 0x%04x\n",
+				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, ARRAY_SIZE(ks->ports), sw->mib_port_cnt, ARRAY_SIZE(sw->phy), ret);
+		return ret;
 	}
 
 	sw->ops->acquire(sw);
@@ -17092,15 +17100,23 @@ static int ksz_mii_write(struct mii_bus *bus, int phy_id, int regnum, u16 val)
 	struct ksz_sw *sw;
 
 	if (!ks) {
-		pr_err("ksz_mii_write: bus->priv is NULL - NOP");
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d, value = 0x%04x - bus->priv is NULL, return -ENODEV\n",
+				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, val);
 		return -ENODEV;
 	}
 	sw = &ks->sw;
-
-	if (phy_id > sw->mib_port_cnt + 1) {
+	if (!sw->ops) {
 		dev_err(ks->dev,
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d, value = %d - phy_id > %d, return -EINVAL\n", __FILE__, __FUNCTION__, __LINE__, phy_id, regnum, val, sw->mib_port_cnt + 1);
-		return -EINVAL;
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d, value = 0x%04x - sw->ops is NULL, return -ENODEV\n",
+				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, val);
+		return -ENODEV;
+	}
+	if (!ks->link_read) {
+		dev_err(ks->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d, value = 0x%04x - ks->link_read is NULL, return -ENODEV\n",
+				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, val);
+		return -ENODEV;
 	}
 
 	/* DEBUG */
