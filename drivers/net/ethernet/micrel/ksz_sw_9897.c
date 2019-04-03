@@ -8141,6 +8141,13 @@ static int port_get_link_speed(struct ksz_port *port)
 	uint p;
 	int change = 0;
 
+	if (!port->linked) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- port->linked is NULL - return 0\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return 0;
+	}
+
 	for (i = 0, n = port->first_port; i < port->port_cnt; i++, n++) {
 		p = get_phy_port(sw, n);
 		info = get_port_info(sw, p);
