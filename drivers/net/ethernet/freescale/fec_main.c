@@ -2017,7 +2017,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	struct fec_enet_private *fep = netdev_priv(ndev);
 	struct phy_device *phy_dev = NULL;
 
-#ifdef CONFIG_HAVE_KSZ9897
+#if 0 // def CONFIG_HAVE_KSZ9897
 	netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 	phy_dev = ndev->phydev;
 #else
