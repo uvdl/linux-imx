@@ -17044,8 +17044,14 @@ static void _rll_write_report(struct sw_priv *sw, struct mii_bus *bus, int phy_i
 static int ksz_mii_read(struct mii_bus *bus, int phy_id, int regnum)
 {
 	struct sw_priv *ks = bus->priv;
-	struct ksz_sw *sw = &ks->sw;
+	struct ksz_sw *sw;
 	int ret = 0xffff;
+
+	if (!ks) {
+		pr_err("ksz_mii_read: bus->priv is NULL - NOP");
+		return 0xffff;
+	}
+	sw = &ks->sw;
 
 	if (phy_id > sw->mib_port_cnt + 1) {
 		dev_err(ks->dev,
@@ -17083,7 +17089,13 @@ static int ksz_mii_read(struct mii_bus *bus, int phy_id, int regnum)
 static int ksz_mii_write(struct mii_bus *bus, int phy_id, int regnum, u16 val)
 {
 	struct sw_priv *ks = bus->priv;
-	struct ksz_sw *sw = &ks->sw;
+	struct ksz_sw *sw;
+
+	if (!ks) {
+		pr_err("ksz_mii_write: bus->priv is NULL - NOP");
+		return -ENODEV;
+	}
+	sw = &ks->sw;
 
 	if (phy_id > sw->mib_port_cnt + 1) {
 		dev_err(ks->dev,
