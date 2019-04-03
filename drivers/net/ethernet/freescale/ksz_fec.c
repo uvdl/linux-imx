@@ -312,9 +312,9 @@ static struct ksz_port *get_priv_port(struct net_device *dev)
 #if defined(CONFIG_HAVE_KSZ9897)
 static int get_net_ready(struct net_device *dev)
 {
-	struct fec_enet_private *priv = netdev_priv(dev);
+	struct fec_enet_private *fep = netdev_priv(dev);
 
-	return priv->hw_priv->ready;
+	return (fep->hw_priv ? fep->hw_priv->ready : 0);
 }
 #endif
 
@@ -408,8 +408,10 @@ static int __maybe_unused ksz_fec_sw_init(struct platform_device *pdev)
 	sw = fep->port.sw;
 	if (!sw) {
 		err = ksz_fec_sw_chk(fep);
-		if (err)
+		if (err) {
+			netdev_err(ndev, "ksz_fec_sw_init: not setup and no switch found\n");
 			return err;
+		}
 	}
 
 	/* This is the main private structure holding hardware information. */
