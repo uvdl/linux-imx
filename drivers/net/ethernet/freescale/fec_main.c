@@ -2130,9 +2130,14 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	int phy_id;
 	int dev_id = fep->dev_id;
 
+#if defined(CONFIG_KSZ_SWITCH) && defined(CONFIG_HAVE_KSZ9897)
+	phy_dev = ndev->phydev;
+	goto skip_connect;
+#endif
+
 #if defined(CONFIG_KSZ_SMI) || defined(CONFIG_HAVE_KSZ8895)
 	/* Can detect PHYs in KSZ8895 switch. */
-	if (dev)
+	if (phy_dev)
 		return -ENXIO;
 #endif
 #ifdef DISABLE_PM
@@ -2168,6 +2173,10 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 				      fep->phy_interface);
 	}
 
+#if defined(CONFIG_KSZ_SWITCH) && defined(CONFIG_HAVE_KSZ9897)
+skip_connect:
+#endif
+
 	if (IS_ERR(phy_dev)) {
 		netdev_err(ndev, "could not attach to PHY\n");
 		return PTR_ERR(phy_dev);
@@ -2194,7 +2203,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	return 0;
 }
 
-static int fec_enet_mii_init(struct platform_device *pdev)
+static int __maybe_unused fec_enet_mii_init(struct platform_device *pdev)
 {
 	static struct mii_bus *fec0_mii_bus;
 	static int *fec_mii_bus_share;
@@ -2246,7 +2255,7 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 		mii_speed--;
 	if (mii_speed > 63) {
 		dev_err(&pdev->dev,
-			"fec clock (%lu) to fast to get right mii speed\n",
+			"fec clock (%lu) too fast to get right mii speed\n",
 			clk_get_rate(fep->clk_ipg));
 		err = -EINVAL;
 		goto err_out;
@@ -3297,6 +3306,7 @@ fec_enet_open(struct net_device *ndev)
 				platform_get_device_id(fep->pdev);
 	int ret;
 
+// NB: I think this might be KEY to prevent kernel panics in delayed work
 #ifdef CONFIG_KSZ_SWITCH
 	struct fec_enet_private	*hfep = fep;
 	int rx_mode = 0;
@@ -3555,7 +3565,7 @@ static void set_multicast_list(struct net_device *ndev)
 		}
 
 		/* only upper 6 bits (FEC_HASH_BITS) are used
-		 * which point to specific bit in he hash registers
+		 * which point to specific bit in the hash registers
 		 */
 		hash = (crc >> (32 - FEC_HASH_BITS)) & 0x3f;
 
@@ -4060,7 +4070,10 @@ fec_probe(struct platform_device *pdev)
 		phy_node = of_node_get(np);
 		fep->fixed_link = true;
 	}
-	fep->phy_node = phy_node;
+	//fep->phy_node = phy_node;
+	dev_err(&pdev->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- name = %s - set phy_node = %s -> NULL\n", __FILE__, __FUNCTION__, __LINE__, pdev->name, fep->phy_node ? "(valid)" : "(null)");
+	fep->phy_node = NULL;
 
 	ret = of_get_phy_mode(pdev->dev.of_node);
 	if (ret < 0) {
@@ -4201,16 +4214,21 @@ fec_probe(struct platform_device *pdev)
 	/* board only enable one mii bus in default */
 	if (!of_get_property(np, "fsl,mii-exclusive", NULL))
 		fep->quirks |= FEC_QUIRK_SINGLE_MDIO;
-	ret = fec_enet_mii_init(pdev);
 
-// NB: I think this is a KEY code to make the FEC-KSZ9897 link work
+	/* https://community.nxp.com/thread/475434 */
+	mdelay(100);
+
 #ifdef CONFIG_KSZ_SWITCH
 	fep->len_fec_stats = (ARRAY_SIZE(fec_stats) * sizeof(u64));
 	fep->hw_priv = fep;
-	if (ret)
-		ret = ksz_fec_sw_chk(fep);
+	ret = ksz_fec_sw_chk(fep);
+    if (ret)
+    /* fallthru */
+#endif
+	ret = fec_enet_mii_init(pdev);
 
-#ifdef CONFIG_FIXED_PHY
+// NB: I think this is a KEY code to make the FEC-KSZ9897 link work
+#if defined(CONFIG_KSZ_SWITCH) && defined(CONFIG_FIXED_PHY)
 	if (ret) {
 		if (of_phy_is_fixed_link(np)) {
 			ret = of_phy_register_fixed_link(np);
@@ -4229,7 +4247,6 @@ fec_probe(struct platform_device *pdev)
 			}
 		}
 	}
-#endif
 #endif
 
 	if (ret)
@@ -4251,15 +4268,16 @@ fec_probe(struct platform_device *pdev)
 		fec_enet_register_fixup(ndev);
 	}
 
-// NB: I think this is a KEY code to make the FEC-KSZ9897 link work
 #ifdef CONFIG_KSZ_SWITCH
-	if (fep->port.sw)
-		ret = ksz_fec_sw_init(fep);
+	if (fep->port.sw) {
+		ret = ksz_fec_sw_init(pdev);
+		if (ret)
+			goto failed_register;
+    }
 	if (ndev->phydev)
 		phy_attached_info(ndev->phydev);
 	else
 		netdev_info(ndev, "deferring PHY attachment (%d)\n", ret);
-
 #endif
 
 	device_init_wakeup(&ndev->dev, fep->wol_flag &

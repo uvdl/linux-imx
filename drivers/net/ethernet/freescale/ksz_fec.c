@@ -290,24 +290,24 @@ static void __maybe_unused ksz_fec_adjust_link(struct net_device *dev)
 
 static u8 get_priv_state(struct net_device *dev)
 {
-	struct fec_enet_private *priv = netdev_priv(dev);
+	struct fec_enet_private *fep = netdev_priv(dev);
 
-	return priv->state;
-}
+	return fep->state;
+}  /* get_priv_state */
 
 static void set_priv_state(struct net_device *dev, u8 state)
 {
-	struct fec_enet_private *priv = netdev_priv(dev);
+	struct fec_enet_private *fep = netdev_priv(dev);
 
-	priv->state = state;
-}
+	fep->state = state;
+}  /* set_priv_state */
 
 static struct ksz_port *get_priv_port(struct net_device *dev)
 {
-	struct fec_enet_private *priv = netdev_priv(dev);
+	struct fec_enet_private *fep = netdev_priv(dev);
 
-	return &priv->port;
-}
+	return &fep->port;
+}  /* get_priv_port */
 
 #if defined(CONFIG_HAVE_KSZ9897)
 static int get_net_ready(struct net_device *dev)
@@ -334,9 +334,11 @@ static void prep_sw_first(struct ksz_sw *sw, int *port_count,
 	sw->net_ops->setup_special(sw, port_count, mib_port_count, dev_count);
 }
 
-static void prep_sw_dev(struct ksz_sw *sw, struct fec_enet_private *fep, int i,
+static void prep_sw_dev(struct ksz_sw *sw, struct platform_device *pdev, int i,
 	int port_count, int mib_port_count, char *dev_name)
 {
+	struct net_device *ndev = platform_get_drvdata(pdev);
+	struct fec_enet_private *fep = netdev_priv(ndev);
 #ifndef CONFIG_KSZ_NO_MDIO_BUS
 	int phy_mode;
 	char phy_id[MII_BUS_ID_SIZE];
@@ -344,19 +346,19 @@ static void prep_sw_dev(struct ksz_sw *sw, struct fec_enet_private *fep, int i,
 	struct phy_device *phydev;
 #endif
 
-	fep->phy_addr = sw->net_ops->setup_dev(sw, fep->netdev, dev_name, &fep->port,
+	fep->phy_addr = sw->net_ops->setup_dev(sw, ndev, dev_name, &fep->port,
 		i, port_count, mib_port_count);
 
 #ifndef CONFIG_KSZ_NO_MDIO_BUS
 	phy_mode = fep->phy_interface;
 	snprintf(bus_id, MII_BUS_ID_SIZE, "sw.%d", 0);
 	snprintf(phy_id, MII_BUS_ID_SIZE, PHY_ID_FMT, bus_id, fep->phy_addr);
-	phydev = phy_attach(fep->netdev, phy_id, phy_mode);
+	phydev = phy_attach(ndev, phy_id, phy_mode);
 	if (!IS_ERR(phydev)) {
-		fep->netdev->phydev = phydev;
+		ndev->phydev = phydev;
 		fep->mii_if.phy_id_mask = 0x1f;
 		fep->mii_if.reg_num_mask = 0x1f;
-		fep->mii_if.dev = fep->netdev;
+		fep->mii_if.dev = ndev;
 		fep->mii_if.mdio_read = mdio_read;
 		fep->mii_if.mdio_write = mdio_write;
 		fep->mii_if.phy_id = fep->phy_addr;
@@ -365,7 +367,7 @@ static void prep_sw_dev(struct ksz_sw *sw, struct fec_enet_private *fep, int i,
 			fep->mii_if.supports_gmii = 1;
 	}
 #endif
-}
+}  /* prep_sw_dev */
 
 static int ksz_fec_sw_chk(struct fec_enet_private *fep)
 {
@@ -381,14 +383,16 @@ static int ksz_fec_sw_chk(struct fec_enet_private *fep)
 	return 0;
 }
 
-static void fec_restart(struct net_device *ndev);
+static void fec_enet_adjust_link(struct net_device *ndev);
 static int fec_enet_rx_napi(struct napi_struct *napi, int budget);
 
 static const struct net_device_ops fec_netdev_ops;
 static const struct ethtool_ops fec_enet_ethtool_ops;
 
-static int ksz_fec_sw_init(struct fec_enet_private *fep)
+static int __maybe_unused ksz_fec_sw_init(struct platform_device *pdev)
 {
+	struct net_device *ndev = platform_get_drvdata(pdev);
+	struct fec_enet_private *fep = netdev_priv(ndev);
 	struct ksz_sw *sw;
 	int err;
 	int i;
@@ -403,11 +407,16 @@ static int ksz_fec_sw_init(struct fec_enet_private *fep)
 	netdev_features_t features;
 
 	sw = fep->port.sw;
+	if (!sw) {
+		err = ksz_fec_sw_chk(fep);
+		if (err)
+			return err;
+	}
 
 	/* This is the main private structure holding hardware information. */
 	hw_priv = fep;
 	hw_priv->parent = sw->dev;
-	main_dev = fep->netdev;
+	main_dev = ndev;
 	pdev = fep->pdev;
 	features = main_dev->features;
 
@@ -423,11 +432,11 @@ static int ksz_fec_sw_init(struct fec_enet_private *fep)
 	/* Save the base device name. */
 	strlcpy(dev_label, hw_priv->netdev->name, IFNAMSIZ);
 
-	prep_sw_dev(sw, fep, 0, port_count, mib_port_count, dev_label);
+	prep_sw_dev(sw, pdev, 0, port_count, mib_port_count, dev_label);
 
 	/* Only the main one needs to set adjust_link for configuration. */
-	if (fep->netdev->phydev->mdio.bus)
-		fep->netdev->phydev->adjust_link = fec_restart;	// NB: not sure this is quite right...
+	if (ndev->phydev->mdio.bus)
+		ndev->phydev->adjust_link = fec_enet_adjust_link;
 
 	fep->link = 0;
 	fep->speed = 0;
@@ -470,8 +479,8 @@ static int ksz_fec_sw_init(struct fec_enet_private *fep)
 		SET_NETDEV_DEV(dev, &pdev->dev);
 
 		prep_sw_dev(sw, fep, i, port_count, mib_port_count, dev_label);
-		if (fep->netdev->phydev->mdio.bus)
-			fep->netdev->phydev->adjust_link = fec_restart;
+		if (ndev->phydev->mdio.bus)
+			ndev->phydev->adjust_link = fec_restart;
 
 		err = register_netdev(dev);
 		if (err) {
@@ -504,29 +513,29 @@ static int ksz_fec_sw_init(struct fec_enet_private *fep)
 
 static void ksz_fec_sw_exit(struct fec_enet_private *fep)
 {
-	struct net_device *dev = fep->netdev;
+	struct net_device *ndev = fep->netdev;
 	struct ksz_sw *sw = fep->port.sw;
 	int i;
 
 #ifdef CONFIG_KSZ_DLR
 	if (sw->features & DLR_HW)
-		exit_dlr_sysfs(&dev->dev);
+		exit_dlr_sysfs(&ndev->dev);
 #endif
 #ifdef CONFIG_1588_PTP
 	if (sw->features & PTP_HW)
-		exit_ptp_sysfs(&fep->ptp_sysfs, &dev->dev);
+		exit_ptp_sysfs(&fep->ptp_sysfs, &ndev->dev);
 #endif
-	exit_sw_sysfs(sw, &fep->sysfs, &dev->dev);
+	exit_sw_sysfs(sw, &fep->sysfs, &ndev->dev);
 	for (i = 1; i < sw->dev_count + sw->dev_offset; i++) {
-		dev = sw->netdev[i];
-		if (!dev)
+		ndev = sw->netdev[i];
+		if (!ndev)
 			continue;
-		fep = netdev_priv(dev);
+		fep = netdev_priv(ndev);
 		flush_work(&fep->port.link_update);
-		unregister_netdev(dev);
-		if (dev->phydev->mdio.bus)
-			phy_detach(dev->phydev);
-		free_netdev(dev);
+		unregister_netdev(ndev);
+		if (ndev->phydev->mdio.bus)
+			phy_detach(ndev->phydev);
+		free_netdev(ndev);
 	}
 }
 

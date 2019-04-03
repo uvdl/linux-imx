@@ -13,15 +13,15 @@
 #define	FEC_H
 /****************************************************************************/
 
-#if defined(CONFIG_KSZ_SWITCH)
-#include "ksz_fec.h"
-#endif
-
 #include <linux/clocksource.h>
 #include <linux/net_tstamp.h>
 #include <linux/pm_qos.h>
 #include <linux/ptp_clock_kernel.h>
 #include <linux/timecounter.h>
+
+#if defined(CONFIG_KSZ_SWITCH)
+#include "ksz_fec.h"
+#endif
 
 #if defined(CONFIG_M523x) || defined(CONFIG_M527x) || defined(CONFIG_M528x) || \
     defined(CONFIG_M520x) || defined(CONFIG_M532x) || defined(CONFIG_ARM) || \
@@ -648,8 +648,8 @@ struct fec_enet_private {
 	struct phy_device	dummy_phy;
 	struct ksz_port		port;
 	struct mii_if_info	mii_if;
-	int			phy_addr;
 	u8			state;
+	int			phy_addr;
 	u32			ready:1;
 	u32			multi:1;
 	u32			promisc:1;
