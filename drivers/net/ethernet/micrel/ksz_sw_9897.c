@@ -15592,7 +15592,7 @@ static void link_update_work(struct work_struct *work)
 	int link;
 	u32 speed;
 	bool duplex;
-	
+
 	if (!port) {
 		pr_err(
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- work->port is NULL - NOP\n",
@@ -15603,6 +15603,18 @@ static void link_update_work(struct work_struct *work)
 	if (!sw) {
 		pr_err(
 				">>>>>>>>>>>>>>> %s -> (%s):%d -- work->port->sw is NULL - NOP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+	if (!port->linked) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- work->port->linked is NULL - SKIP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+	if (!port->phydev) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- work->port->phydev is NULL - SKIP\n",
 				__FILE__, __FUNCTION__, __LINE__);
 		return;
 	}
@@ -15638,13 +15650,6 @@ static void link_update_work(struct work_struct *work)
 
 	info = port->linked;
 	phydev = port->phydev;
-	if (!info || !phydev) {
-		pr_err(
-				">>>>>>>>>>>>>>> %s -> (%s):%d -- %s %s - SKIP\n",
-				__FILE__, __FUNCTION__, __LINE__,
-				info ? "" : "port->linked is NULL", phydev ? "" : "port->phydev is NULL");
-		continue;
-	}
 	phydev->link = (info->state == media_connected);
 	phydev->speed = info->tx_rate / TX_RATE_UNIT;
 	phydev->duplex = (info->duplex == 2);
