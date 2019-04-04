@@ -2015,8 +2015,10 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 		phy_dev = of_phy_connect(ndev, fep->phy_node,
 					 &fec_enet_adjust_link, 0,
 					 fep->phy_interface);
-		if (!phy_dev)
+		if (!phy_dev) {
+			netdev_err(ndev, "Unable to connect to phy\n");
 			return -ENODEV;
+		}
 	} else {
 		/* check for attached phy */
 		for (phy_id = 0; (phy_id < PHY_MAX_ADDR); phy_id++) {
@@ -2118,7 +2120,7 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 		mii_speed--;
 	if (mii_speed > 63) {
 		dev_err(&pdev->dev,
-			"fec clock (%lu) to fast to get right mii speed\n",
+			"fec clock (%lu) too fast to get right mii speed\n",
 			clk_get_rate(fep->clk_ipg));
 		err = -EINVAL;
 		goto err_out;
@@ -3195,7 +3197,7 @@ static void set_multicast_list(struct net_device *ndev)
 		}
 
 		/* only upper 6 bits (FEC_HASH_BITS) are used
-		 * which point to specific bit in he hash registers
+		 * which point to specific bit in the hash registers
 		 */
 		hash = (crc >> (32 - FEC_HASH_BITS)) & 0x3f;
 
@@ -3811,6 +3813,10 @@ fec_probe(struct platform_device *pdev)
 	/* board only enable one mii bus in default */
 	if (!of_get_property(np, "fsl,mii-exclusive", NULL))
 		fep->quirks |= FEC_QUIRK_SINGLE_MDIO;
+
+	/* https://community.nxp.com/thread/475434 */
+	mdelay(100);
+
 	ret = fec_enet_mii_init(pdev);
 	if (ret)
 		goto failed_mii_init;
@@ -3829,6 +3835,13 @@ fec_probe(struct platform_device *pdev)
 		fec_enet_register_fixup(ndev);
 	}
 
+#if 1
+	if (ndev->phydev)
+		phy_attached_info(ndev->phydev);
+	else
+		netdev_info(ndev, "deferring PHY attachment (%d)\n", ret);
+#endif
+
 	device_init_wakeup(&ndev->dev, fep->wol_flag &
 			   FEC_WOL_HAS_MAGIC_PACKET);
 
@@ -3844,28 +3857,39 @@ fec_probe(struct platform_device *pdev)
 	return 0;
 
 failed_register:
+    if (ret) { dev_err(&pdev->dev,"failed_register\n"); ret = 0; }
 	fec_enet_mii_remove(fep);
 failed_mii_init:
+    if (ret) { dev_err(&pdev->dev,"failed_mii_init\n"); ret = 0; }
 failed_irq:
+    if (ret) { dev_err(&pdev->dev,"failed_irq\n"); ret = 0; }
 failed_init:
+    if (ret) { dev_err(&pdev->dev,"failed_init\n"); ret = 0; }
 	fec_ptp_stop(pdev);
 	if (fep->reg_phy)
 		regulator_disable(fep->reg_phy);
 failed_reset:
+    if (ret) { dev_err(&pdev->dev,"failed_reset\n"); ret = 0; }
 	pm_runtime_disable(&pdev->dev);
 failed_regulator:
+    if (ret) { dev_err(&pdev->dev,"failed_regulator\n"); ret = 0; }
 	clk_disable_unprepare(fep->clk_ahb);
 failed_clk_ahb:
+    if (ret) { dev_err(&pdev->dev,"failed_clk_ahb\n"); ret = 0; }
 	clk_disable_unprepare(fep->clk_ipg);
 failed_clk_ipg:
+    if (ret) { dev_err(&pdev->dev,"failed_clk_ipg\n"); ret = 0; }
 	fec_enet_clk_enable(ndev, false);
 failed_clk:
+    if (ret) { dev_err(&pdev->dev,"failed_clk\n"); ret = 0; }
 	if (of_phy_is_fixed_link(np))
 		of_phy_deregister_fixed_link(np);
 	of_node_put(phy_node);
 failed_phy:
+    if (ret) { dev_err(&pdev->dev,"failed_phy\n"); ret = 0; }
 	dev_id--;
 failed_ioremap:
+    if (ret) { dev_err(&pdev->dev,"failed_ioremap\n"); ret = 0; }
 	free_netdev(ndev);
 
 	return ret;
@@ -3875,9 +3899,13 @@ static int
 fec_drv_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
-	struct fec_enet_private *fep = netdev_priv(ndev);
+	struct fec_enet_private *fep;
 	struct device_node *np = pdev->dev.of_node;
 
+	// NB: possible NULL-dereference danger in original code
+	if (!ndev)
+		return 0;
+	fep = netdev_priv(ndev);
 	cancel_work_sync(&fep->tx_timeout_work);
 	fec_ptp_stop(pdev);
 	unregister_netdev(ndev);
@@ -3886,7 +3914,9 @@ fec_drv_remove(struct platform_device *pdev)
 		regulator_disable(fep->reg_phy);
 	if (of_phy_is_fixed_link(np))
 		of_phy_deregister_fixed_link(np);
-	of_node_put(fep->phy_node);
+	// NB: possible NULL-dereference danger in original code
+	if (fep->phy_node)
+		of_node_put(fep->phy_node);
 	free_netdev(ndev);
 
 	return 0;
