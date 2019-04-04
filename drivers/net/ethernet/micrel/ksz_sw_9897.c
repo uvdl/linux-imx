@@ -8146,6 +8146,13 @@ static int port_get_link_speed(struct ksz_port *port)
 	uint p;
 	int change = 0;
 
+	if (!port->linked) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- port->linked is NULL - return 0\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return 0;
+	}
+
 	for (i = 0, n = port->first_port; i < port->port_cnt; i++, n++) {
 		p = get_phy_port(sw, n);
 		info = get_port_info(sw, p);
@@ -9208,10 +9215,18 @@ static void sw_set_ops(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
 	struct ksz_sw *sw = container_of(dwork, struct ksz_sw, set_ops);
-	struct ksz_iba_info *iba = &sw->info->iba;
+	struct ksz_iba_info *iba;
 #ifdef CONFIG_1588_PTP
 	struct ptp_info *ptp = NULL;
 #endif
+
+	if (!sw->info) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- set_ops.sw->info is NULL - NOP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+	iba = &sw->info->iba;
 
 	if (sw->reg == &sw_iba_ops)
 		return;
@@ -13406,7 +13421,15 @@ static void sw_tx_fwd(struct work_struct *work)
 	bool last;
 	struct sk_buff *skb;
 	struct ksz_sw *sw = container_of(work, struct ksz_sw, tx_fwd);
-	const struct net_device_ops *ops = sw->main_dev->netdev_ops;
+	const struct net_device_ops *ops;
+
+	if (!sw->main_dev) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- sw->main_dev is NULL - NOP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+	ops = sw->main_dev->netdev_ops;
 
 	last = skb_queue_empty(&sw->txq);
 	while (!last) {
@@ -14968,6 +14991,19 @@ static void sw_delayed_set_addr(struct work_struct *work)
 {
 	struct ksz_sw *sw = container_of(work, struct ksz_sw, set_addr);
 
+	if (!sw->ops) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- sw->ops is NULL - NOP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+	if (!sw->netdev[0]) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- sw->netdev[0] is NULL - NOP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+
 	sw->ops->acquire(sw);
 	sw_set_addr(sw, sw->netdev[0]->dev_addr);
 	sw->ops->release(sw);
@@ -15673,7 +15709,7 @@ static void link_update_work(struct work_struct *work)
 {
 	struct ksz_port *port =
 		container_of(work, struct ksz_port, link_update);
-	struct ksz_sw *sw = port->sw;
+	struct ksz_sw *sw;
 	struct net_device *dev;
 	struct phy_device *phydev;
 	struct ksz_port_info *info;
@@ -15682,6 +15718,32 @@ static void link_update_work(struct work_struct *work)
 	int link;
 	u32 speed;
 	bool duplex;
+
+	if (!port) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- work->port is NULL - NOP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+	sw = port->sw;
+	if (!sw) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- work->port->sw is NULL - NOP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+	if (!port->linked) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- work->port->linked is NULL - SKIP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+	if (!port->phydev) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- work->port->phydev is NULL - SKIP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
 
 #ifdef CONFIG_KSZ_DLR
 	if (sw->features & DLR_HW) {
@@ -15701,6 +15763,12 @@ static void link_update_work(struct work_struct *work)
 			continue;
 		info->report = false;
 		phydev = sw->phy[i];
+		if (!phydev) {
+			pr_err(
+					">>>>>>>>>>>>>>> %s -> (%s):%d -- sw->phy[%d] is NULL - SKIP\n",
+					__FILE__, __FUNCTION__, __LINE__, i);
+			continue;
+		}
 		phydev->link = (info->state == media_connected);
 		phydev->speed = info->tx_rate / TX_RATE_UNIT;
 		phydev->duplex = (info->duplex == 2);
@@ -16984,8 +17052,16 @@ static void sw_change(struct work_struct *work)
 {
 	struct sw_priv *ks =
 		container_of(work, struct sw_priv, irq_work);
-	struct ksz_sw *sw = &ks->sw;
+	struct ksz_sw *sw;
 	int intr;
+
+	if (!ks) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- irq_work->priv is NULL - NOP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+	sw = &ks->sw;
 
 	/* Fake interrupt can be triggered once. */
 	if (ks->intr_working & 0x80000000) {
@@ -17149,11 +17225,24 @@ static void sw_r_phy(struct ksz_sw *sw, u16 phy, u16 reg, u16 *val)
 static int ksz_mii_read(struct mii_bus *bus, int phy_id, int regnum)
 {
 	struct sw_priv *ks = bus->priv;
-	struct ksz_sw *sw = &ks->sw;
+	struct ksz_sw *sw;
 	int ret = 0xffff;
 
+	if (!ks) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d - bus->priv is NULL, return 0x%04x\n",
+				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, ret);
+		return ret;
+	}
+	sw = &ks->sw;
 	if (phy_id > sw->mib_port_cnt + 1)
 		return 0xffff;
+	if (!sw->ops) {
+		dev_err(ks->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d - sw->ops is NULL, return 0x%04x\n",
+				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, ret);
+		return ret;
+	}
 
 	sw->ops->acquire(sw);
 	ret = 0;
@@ -17181,7 +17270,21 @@ static int ksz_mii_read(struct mii_bus *bus, int phy_id, int regnum)
 static int ksz_mii_write(struct mii_bus *bus, int phy_id, int regnum, u16 val)
 {
 	struct sw_priv *ks = bus->priv;
-	struct ksz_sw *sw = &ks->sw;
+	struct ksz_sw *sw;
+
+	if (!ks) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d, value = 0x%04x - bus->priv is NULL, return -ENODEV\n",
+				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, val);
+		return -ENODEV;
+	}
+	sw = &ks->sw;
+	if (!sw->ops) {
+		dev_err(ks->dev,
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- phy_id = %d, regnum = %d, value = 0x%04x - sw->ops is NULL, return -ENODEV\n",
+				__FILE__, __FUNCTION__, __LINE__, phy_id, regnum, val);
+		return -ENODEV;
+	}
 
 	if (phy_id > sw->mib_port_cnt + 1)
 		return -EINVAL;
@@ -17439,12 +17542,20 @@ static void ksz9897_mib_read_work(struct work_struct *work)
 {
 	struct sw_priv *hw_priv =
 		container_of(work, struct sw_priv, mib_read);
-	struct ksz_sw *sw = &hw_priv->sw;
+	struct ksz_sw *sw;
 	struct ksz_port_mib *mib;
 	unsigned long interval;
 	uint n;
 	uint p;
 	int cnt = 0;
+
+	if (!hw_priv) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- mib_read->priv is NULL - NOP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+	sw = &hw_priv->sw;
 
 	/* Find out how many ports are connected. */
 	for (n = 0; n <= sw->mib_port_cnt; n++) {
@@ -17547,13 +17658,22 @@ static void link_read_work(struct work_struct *work)
 	struct delayed_work *dwork = to_delayed_work(work);
 	struct sw_priv *hw_priv =
 		container_of(dwork, struct sw_priv, link_read);
-	struct ksz_sw *sw = &hw_priv->sw;
+	struct ksz_sw *sw;
 	struct ksz_port *port = NULL;
 	struct ksz_port *sw_port = NULL;
 	int i;
 	int changes = 0;
 	int s = 1;
-	int dev_cnt = sw->dev_count + sw->dev_offset;
+	int dev_cnt;
+
+	if (!hw_priv) {
+		pr_err(
+				">>>>>>>>>>>>>>> %s -> (%s):%d -- link_read->priv is NULL - NOP\n",
+				__FILE__, __FUNCTION__, __LINE__);
+		return;
+	}
+	sw = &hw_priv->sw;
+	dev_cnt = sw->dev_count + sw->dev_offset;
 
 	if (1 == sw->dev_count || 1 == sw->dev_offset)
 		s = 0;
