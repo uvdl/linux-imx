@@ -47,9 +47,8 @@
 	ksz9893: ksz9893@0 {
 		compatible = "microchip,ksz9893";
 		reg = <0>;
-		phy-mode = "rgmii-id";
 
-		spi-max-frequency = <44000000>;
+		spi-max-frequency = <40000000>;
 		spi-cpha;
 		spi-cpol;
 		interrupt-parent = <&gpio4>;
@@ -69,7 +68,7 @@
 			port@2 {
 				reg = <2>;
 				label = "cpu";
-				ethernet = <&fec>;
+				ethernet = <&ethphy0>;
 				fixed-link {
 					speed = <1000>;
 					full-duplex;
@@ -83,11 +82,13 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet>;
 	phy-mode = "rgmii-id";
+	phy-handle = <&ethphy0>;
 	phy-reset-gpios = <&gpio1 25 0>;
 	phy-reset-duration = <10>;
 	phy-reset-post-delay = <100>;
 	phy-supply = <&reg_usb_otg_vbus>;
 	fsl,magic-packet;
+	fsl,mii-exclusive;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "okay";
@@ -95,6 +96,10 @@
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
+	};
+	ethphy0: ethernet-phy@0 {
+		compatible = "microchip,ksz9893";
+		reg = <0>;
 	};
 };
 
