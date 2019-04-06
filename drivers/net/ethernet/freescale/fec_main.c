@@ -2033,7 +2033,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	} else {
 		netdev_err(ndev, ">>>>>>> %s:(%s):%d\n", __FILE__, __FUNCTION__, __LINE__);
 		/* check for attached phy */
-		for (phy_id = 2; (phy_id < PHY_MAX_ADDR); phy_id++) {
+		for (phy_id = 3; (phy_id < PHY_MAX_ADDR); phy_id++) {
 			netdev_err(ndev, ">>>>>>> %s:(%s):%d -- phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id);
 			if (!mdiobus_is_registered_device(fep->mii_bus, phy_id)){
 				netdev_err(ndev, ">>>>>>> %s:(%s):%d -- phy_id = %d\n", __FILE__, __FUNCTION__, __LINE__, phy_id);
