@@ -2102,6 +2102,7 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 			mii_cnt++;
 			return 0;
 		}
+		dev_err(&pdev->dev, "(%s): FEC_QUIRK_SINGLE_MDIO && %d > 0\n", __FUNCTION__, fep->dev_id);
 		return -ENOENT;
 	}
 
@@ -2162,10 +2163,13 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 	if (node) {
 		err = of_mdiobus_register(fep->mii_bus, node);
 		of_node_put(node);
+		if (err) dev_err(&pdev->dev, "(%s): of_mdiobus_register(%s, %s)=%d (ERR)\n", __FUNCTION__, fep->mii_bus->name, node->name, err);
 	} else if (fep->phy_node && !fep->fixed_link) {
 		err = -EPROBE_DEFER;
+		dev_err(&pdev->dev, "(%s): fep->phy_node=%s && !fep->fixed_link; -EPROBE_DEFER\n", __FUNCTION__, fep->phy_node->name);
 	} else {
 		err = mdiobus_register(fep->mii_bus);
+		if (err) dev_err(&pdev->dev, "(%s): mdiobus_register(%s)=%d (ERR)\n", __FUNCTION__, fep->mii_bus->name, err);
 	}
 
 	if (err)
