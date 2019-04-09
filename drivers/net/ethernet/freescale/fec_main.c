@@ -2165,7 +2165,7 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 	fep->mii_bus->priv = fep;
 	fep->mii_bus->parent = &pdev->dev;
 
-	dev_info(&pdev->dev, "(%s): of_mdiobus_register(%s, %s)=%d (ERR)\n", __FUNCTION__, pdev->dev.of_node, node->name, err);
+	dev_info(&pdev->dev, "(%s): of_mdiobus_register(%s, %s)=%d (ERR)\n", __FUNCTION__, pdev->dev.of_node->name, node->name, err);
 
 	node = of_get_child_by_name(pdev->dev.of_node, "mdio");
 	if (node) {
