@@ -50,7 +50,7 @@
 		spi-max-frequency = <40000000>;
 		spi-cpha;
 		spi-cpol;
-		mdio-parent-bus = <&mdio1>;
+		mdio-parent-bus = <&mdio>;
 		status = "okay";
 
 		ports {
@@ -80,6 +80,7 @@
 &fec {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet>;
+	phy-handle = <&kszport2>;
 	phy-mode = "rgmii";
 	phy-reset-gpios = <&gpio1 25 0>;
 	phy-reset-duration = <10>;
@@ -94,10 +95,14 @@
 		full-duplex;
 	};
 
-	mdio1: mdio {
+	mdio {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		status = "okay";
+
+		enetphy: ethernet-phy@2 {
+			compatible = "ethernet-phy-ieee802.3-c22";
+			reg = <2>;
+		};
 	};
 };
 
