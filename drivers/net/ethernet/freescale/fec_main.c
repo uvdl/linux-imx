@@ -2012,6 +2012,8 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	int dev_id = fep->dev_id;
 
 	if (fep->phy_node) {
+		netdev_info(ndev, "(%s): of_phy_connect(,%s,,,%s)\n", __FUNCTION__,
+			fep->phy_node->name, phy_modes(fep->phy_interface) );
 		phy_dev = of_phy_connect(ndev, fep->phy_node,
 					 &fec_enet_adjust_link, 0,
 					 fep->phy_interface);
@@ -2022,6 +2024,8 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	} else {
 		/* check for attached phy */
 		for (phy_id = 0; (phy_id < PHY_MAX_ADDR); phy_id++) {
+			netdev_info(ndev, "(%s): mdiobus_is_registered_device(%s,%d)\n", __FUNCTION__,
+				fep->mii_bus->name, phy_id );
 			if (!mdiobus_is_registered_device(fep->mii_bus, phy_id))
 				continue;
 			if (dev_id--)
@@ -2038,6 +2042,8 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 
 		snprintf(phy_name, sizeof(phy_name),
 			 PHY_ID_FMT, mdio_bus_id, phy_id);
+		netdev_info(ndev, "(%s): phy_connect(,%s,,%s)\n", __FUNCTION__,
+			phy_name, phy_modes(fep->phy_interface) );
 		phy_dev = phy_connect(ndev, phy_name, &fec_enet_adjust_link,
 				      fep->phy_interface);
 	}
@@ -2158,6 +2164,8 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 		pdev->name, fep->dev_id + 1);
 	fep->mii_bus->priv = fep;
 	fep->mii_bus->parent = &pdev->dev;
+
+	dev_info(&pdev->dev, "(%s): of_mdiobus_register(%s, %s)=%d (ERR)\n", __FUNCTION__, pdev->dev.of_node, node->name, err);
 
 	node = of_get_child_by_name(pdev->dev.of_node, "mdio");
 	if (node) {
