@@ -50,7 +50,7 @@
 		spi-max-frequency = <40000000>;
 		spi-cpha;
 		spi-cpol;
-		mdio-parent-bus = <&mdio>;
+		mdio-parent-bus = <&mdio1>;
 		status = "okay";
 
 		ports {
@@ -95,7 +95,7 @@
 		full-duplex;
 	};
 
-	mdio {
+	mdio1: mdio {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
