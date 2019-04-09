@@ -55,11 +55,11 @@
 		ports {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			kszport2: port@0 {
+			kszport0: port@0 {
 				reg = <0>;
 				label = "lan1";
 			};
-			kszport2: port@1 {
+			kszport1: port@1 {
 				reg = <1>;
 				label = "lan2";
 			};
