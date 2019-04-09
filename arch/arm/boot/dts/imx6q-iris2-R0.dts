@@ -50,6 +50,7 @@
 		spi-max-frequency = <40000000>;
 		spi-cpha;
 		spi-cpol;
+		mdio-parent-bus = <&mdio1>;
 		status = "okay";
 
 		ports {
@@ -66,7 +67,7 @@
 			kszport2: port@2 {
 				reg = <2>;
 				label = "cpu";
-				ethernet = <&ethphy2>;
+				ethernet = <&fec>;
 				fixed-link {
 					speed = <1000>;
 					full-duplex;
@@ -80,7 +81,6 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet>;
 	phy-mode = "rgmii";
-	phy-handle = <&ethphy2>;
 	phy-reset-gpios = <&gpio1 25 0>;
 	phy-reset-duration = <10>;
 	phy-reset-post-delay = <100>;
@@ -93,15 +93,11 @@
 		speed = <1000>;
 		full-duplex;
 	};
-	mdio {
+
+	mdio1: mdio {
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		ethphy2: ethernet-phy@2 {
-			interrupt-parent = <&gpio4>;
-			interrupts = <14 IRQ_TYPE_LEVEL_LOW>;
-			reg = <2>;
-		};
+		status = "okay";
 	};
 };
 
