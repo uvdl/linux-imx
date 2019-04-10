@@ -2118,7 +2118,7 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 		mii_speed--;
 	if (mii_speed > 63) {
 		dev_err(&pdev->dev,
-			"fec clock (%lu) to fast to get right mii speed\n",
+			"fec clock (%lu) too fast to get right mii speed\n",
 			clk_get_rate(fep->clk_ipg));
 		err = -EINVAL;
 		goto err_out;
@@ -3195,7 +3195,7 @@ static void set_multicast_list(struct net_device *ndev)
 		}
 
 		/* only upper 6 bits (FEC_HASH_BITS) are used
-		 * which point to specific bit in he hash registers
+		 * which point to specific bit in the hash registers
 		 */
 		hash = (crc >> (32 - FEC_HASH_BITS)) & 0x3f;
 
@@ -3811,6 +3811,10 @@ fec_probe(struct platform_device *pdev)
 	/* board only enable one mii bus in default */
 	if (!of_get_property(np, "fsl,mii-exclusive", NULL))
 		fep->quirks |= FEC_QUIRK_SINGLE_MDIO;
+
+	/* https://community.nxp.com/thread/475434 */
+	mdelay(100);
+
 	ret = fec_enet_mii_init(pdev);
 	if (ret)
 		goto failed_mii_init;
@@ -3875,9 +3879,13 @@ static int
 fec_drv_remove(struct platform_device *pdev)
 {
 	struct net_device *ndev = platform_get_drvdata(pdev);
-	struct fec_enet_private *fep = netdev_priv(ndev);
+	struct fec_enet_private *fep;
 	struct device_node *np = pdev->dev.of_node;
 
+	// NB: possible NULL-dereference danger in original code
+	if (!ndev)
+		return 0;
+	fep = netdev_priv(ndev);
 	cancel_work_sync(&fep->tx_timeout_work);
 	fec_ptp_stop(pdev);
 	unregister_netdev(ndev);
@@ -3886,7 +3894,9 @@ fec_drv_remove(struct platform_device *pdev)
 		regulator_disable(fep->reg_phy);
 	if (of_phy_is_fixed_link(np))
 		of_phy_deregister_fixed_link(np);
-	of_node_put(fep->phy_node);
+	// NB: possible NULL-dereference danger in original code
+	if (fep->phy_node)
+		of_node_put(fep->phy_node);
 	free_netdev(ndev);
 
 	return 0;
