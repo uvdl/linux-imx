@@ -20,6 +20,9 @@ help:
 	@echo '  lguest                 - a minimal 32-bit x86 hypervisor'
 	@echo '  net                    - misc networking tools'
 	@echo '  perf                   - Linux performance measurement and analysis tool'
+	@echo '  ptp_cli                - KSZ switches Precision Time Protocol command line'
+	@echo '  ptp_net                - KSZ switches Precision Time Protocol send/recv'
+	@echo '  regs_bin               - KSZ switches register access'
 	@echo '  selftests              - various kernel selftests'
 	@echo '  spi                    - spi tools'
 	@echo '  objtool                - an ELF object analysis tool'
@@ -72,6 +75,15 @@ PERF_O   = $(if $(O),$(O)/tools/perf,)
 perf: FORCE
 	$(Q)mkdir -p $(PERF_O) .
 	$(Q)$(MAKE) --no-print-directory -C perf O=$(PERF_O) subdir=
+
+ptp_cli: FORCE
+	$(call descend,$@)
+
+ptp_net: FORCE
+	$(call descend,$@)
+
+regs_bin: FORCE
+	$(call descend,$@)
 
 selftests: FORCE
 	$(call descend,testing/$@)
@@ -144,6 +156,15 @@ libsubcmd_clean:
 perf_clean:
 	$(Q)mkdir -p $(PERF_O) .
 	$(Q)$(MAKE) --no-print-directory -C perf O=$(PERF_O) subdir= clean
+
+ptp_cli_clean:
+	$(call descend,testing/$(@:_clean=),clean)
+
+ptp_net_clean:
+	$(call descend,testing/$(@:_clean=),clean)
+
+regs_bin_clean:
+	$(call descend,testing/$(@:_clean=),clean)
 
 selftests_clean:
 	$(call descend,testing/$(@:_clean=),clean)
