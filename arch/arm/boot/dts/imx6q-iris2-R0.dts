@@ -79,10 +79,14 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_enet>;
 	phy-mode = "rgmii";
-	phy-handle = <&ksz9893>;
 	phy-reset-gpios = <&gpio1 25 0>;
+	phy-reset-duration = <10>;
+	phy-reset-post-delay = <100>;
+	phy-supply = <&reg_usb_otg_vbus>;
 	fsl,magic-packet;
+	fsl,mii-exclusive;
 	status = "okay";
+
 	fixed-link {
 		speed = <1000>;
 		full-duplex;
