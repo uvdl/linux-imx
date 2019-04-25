@@ -154,7 +154,7 @@ unsigned int mipi_csi2_set_lanes(struct mipi_csi2_info *info)
 }
 EXPORT_SYMBOL(mipi_csi2_set_lanes);
 
-int mipi_csi2_set_lanes2(struct mipi_csi2_info *info, unsigned lanes)
+unsigned int mipi_csi2_set_lanes2(struct mipi_csi2_info *info, unsigned lanes)
 {
 	if (--lanes > 3)
 		return -EINVAL;
