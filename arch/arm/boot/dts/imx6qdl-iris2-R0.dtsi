@@ -360,11 +360,18 @@
 	pinctrl-0 = <&pinctrl_i2c3_3>;
 	status = "okay";
 
-	/* DS1337 RTC module */
-	rtc@0x68 {
-		compatible = "dallas,ds1337";
-		reg = <0x68>;
+	tc358743_mipi: tc358743_mipi@0f {
+		compatible = "tc358743_mipi";
+		reg = <0x0f>;
+		clocks = <&clks IMX6QDL_CLK_CKO2>;
+		clock-names = "csi_mclk";
+		pwn-gpios = <&gpio3 13 1>;
+		rst-gpios = <&gpio4 22 0>;
+		csi_id = <0>;
+		mclk = <27000000>;
+		mclk_source = <0>;
 	};
+
 };
 
 &iomuxc {
@@ -383,8 +390,11 @@
 				MX6QDL_PAD_ENET_RXD0__OSC32K_32K_OUT	0x000b0
 				/* Audio Clock */
 				MX6QDL_PAD_GPIO_0__CCM_CLKO1		0x130b0
-				/* Camera Clock */
-				MX6QDL_PAD_GPIO_3__CCM_CLKO2		0x130b0
+				/*TC358743*/
+				MX6QDL_PAD_DISP0_DAT1__GPIO4_IO22	0x030b0 /*RST*/
+				MX6QDL_PAD_EIM_DA13__GPIO3_IO13		0x030b0	/*PWN*/
+				MX6QDL_PAD_GPIO_3__CCM_CLKO2		0x130b0 /*Clock*/
+
 			>;
 		};
 
@@ -474,7 +484,7 @@
 				MX6QDL_PAD_DI0_PIN3__IPU1_DI0_PIN03		0x10
 				MX6QDL_PAD_DI0_PIN4__IPU1_DI0_PIN04		0x80000000
 				MX6QDL_PAD_DISP0_DAT0__IPU1_DISP0_DATA00	0x10
-				MX6QDL_PAD_DISP0_DAT1__IPU1_DISP0_DATA01	0x10
+				// MX6QDL_PAD_DISP0_DAT1__IPU1_DISP0_DATA01	0x10
 				MX6QDL_PAD_DISP0_DAT2__IPU1_DISP0_DATA02	0x10
 				MX6QDL_PAD_DISP0_DAT3__IPU1_DISP0_DATA03	0x10
 				MX6QDL_PAD_DISP0_DAT4__IPU1_DISP0_DATA04	0x10
@@ -669,7 +679,7 @@
 &mipi_csi {
 	status = "okay";
 	ipu_id = <0>;
-	csi_id = <1>;
+	csi_id = <0>;
 	v_channel = <0>;
 	lanes = <2>;
 	status = "okay";
