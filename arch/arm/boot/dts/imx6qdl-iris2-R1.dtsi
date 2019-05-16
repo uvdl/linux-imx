@@ -247,6 +247,23 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c1_2>;
 	status = "okay";
+
+		ab_abb5zes3: ab-abb5zes3@68 {
+			compatible = "abracon,abb5zes3";
+			interrupt-parent = <&gpio0>;
+			interrupts = <31 IRQ_TYPE_EDGE_FALLING>;
+			pinctrl-0 = <&pmx_rtc_alarm_int>;
+			pinctrl-names = "default";
+			reg = <0x68>;
+		};
+
+		as6200@0x49 {
+			compatible = "ams,as6200";
+			reg = <0x49>;
+			interrupt-parent = <&gpio>;
+			interrupts = <4 1>;
+		};
+
 };
 
 &i2c2 {
