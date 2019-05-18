@@ -2012,14 +2012,20 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	int dev_id = fep->dev_id;
 
 	if (fep->phy_node) {
+		netdev_info(ndev, "(%s): of_phy_connect(,%s,,,%s)\n", __FUNCTION__,
+			fep->phy_node->name, phy_modes(fep->phy_interface) );
 		phy_dev = of_phy_connect(ndev, fep->phy_node,
 					 &fec_enet_adjust_link, 0,
 					 fep->phy_interface);
-		if (!phy_dev)
+		if (!phy_dev) {
+			netdev_err(ndev, "Unable to connect to phy\n");
 			return -ENODEV;
+		}
 	} else {
 		/* check for attached phy */
 		for (phy_id = 0; (phy_id < PHY_MAX_ADDR); phy_id++) {
+			netdev_info(ndev, "(%s): mdiobus_is_registered_device(%s,%d)\n", __FUNCTION__,
+				fep->mii_bus->name, phy_id );
 			if (!mdiobus_is_registered_device(fep->mii_bus, phy_id))
 				continue;
 			if (dev_id--)
@@ -2036,6 +2042,8 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 
 		snprintf(phy_name, sizeof(phy_name),
 			 PHY_ID_FMT, mdio_bus_id, phy_id);
+		netdev_info(ndev, "(%s): phy_connect(,%s,,%s)\n", __FUNCTION__,
+			phy_name, phy_modes(fep->phy_interface) );
 		phy_dev = phy_connect(ndev, phy_name, &fec_enet_adjust_link,
 				      fep->phy_interface);
 	}
@@ -2100,6 +2108,7 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 			mii_cnt++;
 			return 0;
 		}
+		dev_err(&pdev->dev, "(%s): FEC_QUIRK_SINGLE_MDIO && %d > 0\n", __FUNCTION__, fep->dev_id);
 		return -ENOENT;
 	}
 
@@ -2157,13 +2166,17 @@ static int fec_enet_mii_init(struct platform_device *pdev)
 	fep->mii_bus->parent = &pdev->dev;
 
 	node = of_get_child_by_name(pdev->dev.of_node, "mdio");
+	dev_info(&pdev->dev, "(%s): of_mdiobus_register(%s, %s)=%s\n", __FUNCTION__, pdev->dev.of_node->name, "mdio", node ? node->name : "(none)");
 	if (node) {
 		err = of_mdiobus_register(fep->mii_bus, node);
 		of_node_put(node);
+		if (err) dev_err(&pdev->dev, "(%s): of_mdiobus_register(%s, %s)=%d (ERR)\n", __FUNCTION__, fep->mii_bus->name, node->name, err);
 	} else if (fep->phy_node && !fep->fixed_link) {
 		err = -EPROBE_DEFER;
+		dev_err(&pdev->dev, "(%s): fep->phy_node=%s && !fep->fixed_link; -EPROBE_DEFER\n", __FUNCTION__, fep->phy_node->name);
 	} else {
 		err = mdiobus_register(fep->mii_bus);
+		if (err) dev_err(&pdev->dev, "(%s): mdiobus_register(%s)=%d (ERR)\n", __FUNCTION__, fep->mii_bus->name, err);
 	}
 
 	if (err)
@@ -3833,6 +3846,13 @@ fec_probe(struct platform_device *pdev)
 		fec_enet_register_fixup(ndev);
 	}
 
+#if 1
+	if (ndev->phydev)
+		phy_attached_info(ndev->phydev);
+	else
+		netdev_info(ndev, "deferring PHY attachment (%d)\n", ret);
+#endif
+
 	device_init_wakeup(&ndev->dev, fep->wol_flag &
 			   FEC_WOL_HAS_MAGIC_PACKET);
 
@@ -3848,28 +3868,39 @@ fec_probe(struct platform_device *pdev)
 	return 0;
 
 failed_register:
+    if (ret) { dev_err(&pdev->dev,"failed_register\n"); ret = 0; }
 	fec_enet_mii_remove(fep);
 failed_mii_init:
+    if (ret) { dev_err(&pdev->dev,"failed_mii_init\n"); ret = 0; }
 failed_irq:
+    if (ret) { dev_err(&pdev->dev,"failed_irq\n"); ret = 0; }
 failed_init:
+    if (ret) { dev_err(&pdev->dev,"failed_init\n"); ret = 0; }
 	fec_ptp_stop(pdev);
 	if (fep->reg_phy)
 		regulator_disable(fep->reg_phy);
 failed_reset:
+    if (ret) { dev_err(&pdev->dev,"failed_reset\n"); ret = 0; }
 	pm_runtime_disable(&pdev->dev);
 failed_regulator:
+    if (ret) { dev_err(&pdev->dev,"failed_regulator\n"); ret = 0; }
 	clk_disable_unprepare(fep->clk_ahb);
 failed_clk_ahb:
+    if (ret) { dev_err(&pdev->dev,"failed_clk_ahb\n"); ret = 0; }
 	clk_disable_unprepare(fep->clk_ipg);
 failed_clk_ipg:
+    if (ret) { dev_err(&pdev->dev,"failed_clk_ipg\n"); ret = 0; }
 	fec_enet_clk_enable(ndev, false);
 failed_clk:
+    if (ret) { dev_err(&pdev->dev,"failed_clk\n"); ret = 0; }
 	if (of_phy_is_fixed_link(np))
 		of_phy_deregister_fixed_link(np);
 	of_node_put(phy_node);
 failed_phy:
+    if (ret) { dev_err(&pdev->dev,"failed_phy\n"); ret = 0; }
 	dev_id--;
 failed_ioremap:
+    if (ret) { dev_err(&pdev->dev,"failed_ioremap\n"); ret = 0; }
 	free_netdev(ndev);
 
 	return ret;

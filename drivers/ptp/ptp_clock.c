@@ -133,7 +133,7 @@ static int ptp_clock_adjtime(struct posix_clock *pc, struct timex *tx)
 	ops = ptp->info;
 
 	if (tx->modes & ADJ_SETOFFSET) {
-		struct timespec ts;
+		struct timespec64 ts;
 		ktime_t kt;
 		s64 delta;
 
@@ -146,7 +146,7 @@ static int ptp_clock_adjtime(struct posix_clock *pc, struct timex *tx)
 		if ((unsigned long) ts.tv_nsec >= NSEC_PER_SEC)
 			return -EINVAL;
 
-		kt = timespec_to_ktime(ts);
+		kt = timespec64_to_ktime(ts);
 		delta = ktime_to_ns(kt);
 		err = ops->adjtime(ops, delta);
 	} else if (tx->modes & ADJ_FREQUENCY) {
@@ -157,6 +157,17 @@ static int ptp_clock_adjtime(struct posix_clock *pc, struct timex *tx)
 		ptp->dialed_frequency = tx->freq;
 	} else if (tx->modes == 0) {
 		tx->freq = ptp->dialed_frequency;
+#if defined(CONFIG_KSZ_PTP)
+		do {
+			long freq;
+
+			err = ops->gettime64(ops, NULL);
+			freq = err;
+			freq <<= 13;
+			freq /= 125;
+			tx->freq = freq;
+		} while (0);
+#endif
 		err = 0;
 	}
 

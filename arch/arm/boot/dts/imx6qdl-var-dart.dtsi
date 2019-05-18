@@ -456,7 +456,7 @@
 			>;
 		};
 
-		pinctrl_pwm1_1: pwm1grp {
+		pinctrl_pwm2: pwm2grp {
 			fsl,pins = <
 				MX6QDL_PAD_DISP0_DAT9__PWM2_OUT		0x1b0b1
 			>;
@@ -489,7 +489,7 @@
 			>;
 		};
 
-		/* Variscite UART2 support */
+		/* Variscite UART3 */
 		pinctrl_uart3_2: uart3grp-2 {	/* RX/TX RTS/CTS */
 			fsl,pins = <
 				MX6QDL_PAD_EIM_D25__UART3_RX_DATA	0x1b0b1
@@ -668,7 +668,7 @@
 
 &pwm2 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm1_1>;
+	pinctrl-0 = <&pinctrl_pwm2>;
 	status = "okay";
 };
 
@@ -678,7 +678,7 @@
 	status = "okay";
 };
 
-/* Console Uart */
+/* ttymxc0 UART (Console) */
 &uart1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_uart1_1>;

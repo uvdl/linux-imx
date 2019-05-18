@@ -1404,7 +1404,12 @@ static void gpio_irq_unmask(struct irq_data *d)
 	struct at91_gpio_chip *at91_gpio = irq_data_get_irq_chip_data(d);
 	void __iomem	*pio = at91_gpio->regbase;
 	unsigned	mask = 1 << d->hwirq;
+#if 1
+	unsigned long	isr;
 
+	if (pio)
+		isr = readl_relaxed(pio + PIO_ISR);
+#endif
 	if (pio)
 		writel_relaxed(mask, pio + PIO_IER);
 }
