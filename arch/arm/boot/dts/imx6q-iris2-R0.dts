@@ -50,6 +50,8 @@
 		spi-max-frequency = <40000000>;
 		spi-cpha;
 		spi-cpol;
+		interrupt-parent = <&gpio4>;
+		interrupts = <14 IRQ_TYPE_LEVEL_LOW>;
 		status = "okay";
 
 		ports {
@@ -66,7 +68,6 @@
 			port@2 {
 				reg = <2>;
 				label = "cpu";
-				ethernet = <&fec>;
 				fixed-link {
 					speed = <1000>;
 					full-duplex;
@@ -85,7 +86,6 @@
 	phy-reset-post-delay = <100>;
 	phy-supply = <&reg_usb_otg_vbus>;
 	fsl,magic-packet;
-	fsl,mii-exclusive;
 	status = "okay";
 
 	fixed-link {
