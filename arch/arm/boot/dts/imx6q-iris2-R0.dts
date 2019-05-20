@@ -9,7 +9,7 @@
 /dts-v1/;
 
 #include "imx6q.dtsi"
-#include "imx6qdl-iris2-R0.dtsi"
+#include "imx6qdl-iris2.dtsi"
 #include "imx6qdl-iris2-displays.dtsi"
 #include "imx6qdl-iris2-buttons.dtsi"
 
@@ -122,4 +122,40 @@
 
 &sata {
 	status = "disabled";
+};
+
+/* ttymxc0 UART (Console) */
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart1_1>;
+	fsl,uart-has-rtscts;
+	status = "okay";
+};
+
+/* ttymxc1 UART (External) */
+&uart2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart2_1>;
+	status = "okay";
+};
+
+/* ttymxc2 UART (PDDL) */
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart3_1>;
+	status = "okay";
+};
+
+/* ttymxc3 UART (Pixhawk) */
+&uart4 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart4_1>;
+	status = "okay";
+};
+
+/* ttymxc4 UART (Iridium) */
+&uart5 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart5_1>;
+	status = "okay";
 };

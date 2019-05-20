@@ -484,6 +484,18 @@
 			>;
 		};
 
+		pmx_rtc_alarm_int: pmx_rtc_alarm_int_grp {
+			fsl,pins = <
+				MX6QDL_PAD_DISP0_DAT19__GPIO5_IO13		0x17071
+			>;
+		};
+
+		pmx_temp_alarm_int: pmx_temp_alarm_int_grp {
+			fsl,pins = <
+				MX6QDL_PAD_DISP0_DAT18__GPIO5_IO12		0x17071
+			>;
+		};
+
 		/* UART1 (Console) */
 		pinctrl_uart1_1: uart1grp-1 { /* RX/TX RTS/CTS */
 			fsl,pins = <
@@ -687,43 +699,6 @@
 
 &ssi2 {
 	fsl,mode = "i2s-slave";
-	status = "okay";
-};
-
-/* ttymxc0 UART (Console) */
-&uart1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart1_1>;
-	fsl,uart-has-rtscts;
-	status = "okay";
-};
-
-/* Bluetooth Uart */
-&uart2 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart2_4>;
-	fsl,uart-has-rtscts;
-	status = "okay";
-};
-
-/* ttymxc2 UART (PDDL) */
-&uart3 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart3_1>;
-	status = "okay";
-};
-
-/* ttymxc3 UART (Pixhawk) */
-&uart4 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart4_1>;
-	status = "okay";
-};
-
-/* ttymxc4 UART (Iridium) */
-&uart5 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_uart5_1>;
 	status = "okay";
 };
 
