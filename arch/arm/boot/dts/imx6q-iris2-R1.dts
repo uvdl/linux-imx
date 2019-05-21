@@ -38,8 +38,8 @@
 };
 
 &ecspi1 {
-	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio5 17 0>;
+	fsl,spi-num-chipselects = <2>;
+	cs-gpios = <&gpio5 17 0>, <&gpio4 16 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi1>;
 	status = "okay";
@@ -74,6 +74,12 @@
 				};
 			};
 		};
+	};
+
+	spidev@0x01 {
+		compatible = "spidev";
+		spi-max-frequency = <10000000>;
+		reg = <1>;
 	};
 };
 
