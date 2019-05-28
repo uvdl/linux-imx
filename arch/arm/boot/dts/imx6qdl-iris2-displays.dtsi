@@ -67,7 +67,3 @@
 		};
 	};
 };
-
-&mxcfb1 {
-	interface_pix_fmt = "RGB666";
-};
