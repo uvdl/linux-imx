@@ -180,7 +180,7 @@
 	v4l2_cap_0 {
 		compatible = "fsl,imx6q-v4l2-capture";
 		ipu_id = <0>;
-		csi_id = <1>;
+		csi_id = <0>;
 		mclk_source = <0>;
 		status = "okay";
 	};
@@ -363,7 +363,11 @@
 				/* Audio Clock */
 				MX6QDL_PAD_GPIO_0__CCM_CLKO1		0x130b0
 				/* Camera Clock */
-				MX6QDL_PAD_GPIO_3__CCM_CLKO2		0x130b0
+				MX6QDL_PAD_GPIO_3__CCM_CLKO2		0x130b0 /*Clock*/
+				/* MIPI/TC358743 */
+				MX6QDL_PAD_DISP0_DAT1__GPIO4_IO22	0x030b0 /*RST*/
+				MX6QDL_PAD_EIM_DA13__GPIO3_IO13		0x030b0	/*PWN; NB: Non-existent pin supposedly routed to some power supply on DART-MX6? */
+
 			>;
 		};
 
@@ -452,7 +456,7 @@
 				MX6QDL_PAD_DI0_PIN3__IPU1_DI0_PIN03		0x10
 				MX6QDL_PAD_DI0_PIN4__IPU1_DI0_PIN04		0x80000000
 				MX6QDL_PAD_DISP0_DAT0__IPU1_DISP0_DATA00	0x10
-				MX6QDL_PAD_DISP0_DAT1__IPU1_DISP0_DATA01	0x10
+				// MX6QDL_PAD_DISP0_DAT1__IPU1_DISP0_DATA01	0x10
 				MX6QDL_PAD_DISP0_DAT2__IPU1_DISP0_DATA02	0x10
 				MX6QDL_PAD_DISP0_DAT3__IPU1_DISP0_DATA03	0x10
 				MX6QDL_PAD_DISP0_DAT4__IPU1_DISP0_DATA04	0x10
@@ -659,7 +663,7 @@
 &mipi_csi {
 	status = "okay";
 	ipu_id = <0>;
-	csi_id = <1>;
+	csi_id = <0>;
 	v_channel = <0>;
 	lanes = <2>;
 };

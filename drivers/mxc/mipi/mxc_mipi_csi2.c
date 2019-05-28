@@ -154,6 +154,20 @@ unsigned int mipi_csi2_set_lanes(struct mipi_csi2_info *info)
 }
 EXPORT_SYMBOL(mipi_csi2_set_lanes);
 
+unsigned int mipi_csi2_set_lanes2(struct mipi_csi2_info *info, unsigned lanes)
+{
+	if (--lanes > 3)
+		return -EINVAL;
+
+	_mipi_csi2_lock(info);
+	mipi_csi2_write(info, lanes, MIPI_CSI2_N_LANES);
+	lanes = mipi_csi2_read(info, MIPI_CSI2_N_LANES);
+	_mipi_csi2_unlock(info);
+	return ++lanes;
+}
+EXPORT_SYMBOL(mipi_csi2_set_lanes2);
+
+
 /*!
  * This function is called to set mipi data type.
  *

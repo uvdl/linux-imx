@@ -113,6 +113,20 @@
 	};
 };
 
+&i2c3 {
+	tc358743_mipi: tc358743_mipi@0f {
+		compatible = "tc358743_mipi";
+		reg = <0x0f>;
+		clocks = <&clks IMX6QDL_CLK_CKO2>;
+		clock-names = "csi_mclk";
+		pwn-gpios = <&gpio3 13 1>;
+		rst-gpios = <&gpio4 22 0>;
+		csi_id = <0>;
+		mclk = <27000000>;
+		mclk_source = <0>;
+	};
+};
+
 &ldb {
 	lvds-channel@0 {
 		crtc = "ipu2-di0";
