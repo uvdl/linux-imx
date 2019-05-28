@@ -24,7 +24,7 @@
 		hdmi-controller = <&hdmi_audio>;
 	};
 
-	&mxcfb2 { /* hdmi - available on R1 */
+	mxcfb2 { /* hdmi - available on R1 */
 		status = "okay";
 	};
 
@@ -168,6 +168,18 @@
 		rst-gpios = <&gpio4 22 0>;
 		csi_id = <0>;
 		mclk = <27000000>;
+		mclk_source = <0>;
+	};
+
+	ov564x_mipi: ov564x_mipi@3c {
+		compatible = "ovti,ov564x_mipi";
+		reg = <0x3c>;
+		clocks = <&clks IMX6QDL_CLK_CKO2>;
+		clock-names = "csi_mclk";
+		pwn-gpios = <&gpio3 13 1>;
+		rst-gpios = <&gpio4 22 0>;
+		csi_id = <0>;
+		mclk = <24000000>;
 		mclk_source = <0>;
 	};
 };

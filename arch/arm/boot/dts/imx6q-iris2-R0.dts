@@ -106,6 +106,18 @@
 		mclk = <27000000>;
 		mclk_source = <0>;
 	};
+
+	ov564x_mipi: ov564x_mipi@3c {
+		compatible = "ovti,ov564x_mipi";
+		reg = <0x3c>;
+		clocks = <&clks IMX6QDL_CLK_CKO2>;
+		clock-names = "csi_mclk";
+		pwn-gpios = <&gpio3 13 1>;
+		rst-gpios = <&gpio4 22 0>;
+		csi_id = <0>;
+		mclk = <24000000>;
+		mclk_source = <0>;
+	};
 };
 
 &ldb {
@@ -116,22 +128,6 @@
 	lvds-channel@1 {
 		crtc = "ipu2-di1";
 	};
-};
-
-&mxcfb1 {
-	status = "okay";
-};
-
-&mxcfb2 {
-	status = "disabled";
-};
-
-&mxcfb3 {
-	status = "disabled";
-};
-
-&mxcfb4 {
-	status = "disabled";
 };
 
 &sata {
