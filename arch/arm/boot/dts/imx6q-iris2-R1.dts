@@ -19,7 +19,7 @@
 
 	sound-hdmi {
 		compatible = "fsl,imx6q-audio-hdmi",
-			     "fsl,imx-audio-hdmi";
+		             "fsl,imx-audio-hdmi";
 		model = "imx-audio-hdmi";
 		hdmi-controller = <&hdmi_audio>;
 	};
@@ -27,7 +27,6 @@
 	mxcfb2 { /* hdmi - available on R1 */
 		status = "okay";
 	};
-
 };
 
 &cpu0 {
@@ -131,6 +130,7 @@
 &hdmi_video {
 	fsl,phy_reg_vlev = <0x0294>;
 	fsl,phy_reg_cksymtx = <0x800d>;
+	HDMI-supply = <&reg_usb_h1_vbus>;
 	status = "okay";
 };
 
