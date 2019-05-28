@@ -16,6 +16,18 @@
 / {
 	model = "Variscite i.MX6 QUAD VAR-DART Smart Device Board";
 	compatible = "fsl,imx6q-var-dart", "fsl,imx6q";
+
+	sound-hdmi {
+		compatible = "fsl,imx6q-audio-hdmi",
+			     "fsl,imx-audio-hdmi";
+		model = "imx-audio-hdmi";
+		hdmi-controller = <&hdmi_audio>;
+	};
+
+	&mxcfb2 { /* hdmi - available on R1 */
+		status = "okay";
+	};
+
 };
 
 &cpu0 {
@@ -35,6 +47,12 @@
 		792000	1250000
 		396000	1250000
 	>;
+};
+
+&dcic1 {
+	dcic_id = <0>;
+	dcic_mux = "dcic-hdmi";
+	status = "okay";
 };
 
 &ecspi1 {
@@ -94,6 +112,28 @@
 	};
 };
 
+&hdmi_audio {
+	status = "okay";
+};
+
+&hdmi_cec {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hdmi_cec>;
+	status = "okay";
+};
+
+&hdmi_core {
+	ipu_id = <0>;
+	disp_id = <0>;
+	status = "okay";
+};
+
+&hdmi_video {
+	fsl,phy_reg_vlev = <0x0294>;
+	fsl,phy_reg_cksymtx = <0x800d>;
+	status = "okay";
+};
+
 &i2c1 {
 	ab_abb5zes3: ab-abb5zes3@68 {
 		compatible = "abracon,abb5zes3";
@@ -110,6 +150,11 @@
 		interrupt-parent = <&gpio5>;
 		interrupts = <12 IRQ_TYPE_EDGE_RISING>;
 		pinctrl-0 = <&pmx_temp_alarm_int>;
+	};
+
+	hdmi_edid: edid@50 {
+		compatible = "fsl,imx6-hdmi-i2c";
+		reg = <0x50>;
 	};
 };
 
@@ -135,22 +180,6 @@
 	lvds-channel@1 {
 		crtc = "ipu2-di1";
 	};
-};
-
-&mxcfb1 {
-	status = "okay";
-};
-
-&mxcfb2 {
-	status = "disabled";
-};
-
-&mxcfb3 {
-	status = "disabled";
-};
-
-&mxcfb4 {
-	status = "disabled";
 };
 
 &sata {
