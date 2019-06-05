@@ -132,6 +132,8 @@ struct uvc_video
 
 	struct uvc_video_queue queue;
 	unsigned int fid;
+	
+	bool bulk_streaming_ep;
 };
 
 enum uvc_state

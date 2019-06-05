@@ -125,7 +125,27 @@
 #define UVC_PU_ANALOG_VIDEO_STANDARD_CONTROL		0x11
 #define UVC_PU_ANALOG_LOCK_STATUS_CONTROL		0x12
 
-/* A.9.7. VideoStreaming Interface Control Selectors */
+ /* A.9.7. Extension Unit Control Selectors */
+#define UVC_XU_CONTROL_UNDEFINED                    0x00
+#define UVC_XU_VIDEO_CONFIG_PROBE_H264_CONTROL      0x01
+#define UVC_XU_VIDEO_CONFIG_COMMIT_H264_CONTROL     0x02
+#define UVC_XU_RATE_CONTROL_MODE_H264_CONTROL       0x03
+#define UVC_XU_TEMPORAL_SCALE_MODE_H264_CONTROL     0x04
+#define UVC_XU_SPATIAL_SCALE_MODE_H264_CONTROL      0x05
+#define UVC_XU_SNR_SCALE_MODE_H264_CONTROL          0x06
+#define UVC_XU_LTR_BUFFER_SIZE_CONTROL_H264_CONTROL 0x07
+#define UVC_XU_LTR_PICTURE_CONTROL_H264_CONTROL     0x08
+#define UVC_XU_PICTURE_TYPE_CONTROL_H264_CONTROL    0x09
+#define UVC_XU_VERSION_H264_CONTROL                 0x0a
+#define UVC_XU_ENCODER_RESET_H264_CONTROL           0x0b
+#define UVC_XU_FRAMERATE_CONFIG_H264_CONTROL        0x0c
+#define UVC_XU_VIDEO_ADVANCE_CONFIG_H264_CONTROL    0x0d
+#define UVC_XU_BITRATE_LAYERS_H264_CONTROL          0x0e
+#define UVC_XU_QP_STEPS_LAYERS_H264_CONTROL         0x0f
+#define UVC_XU_GENERIC_CONTROL                      0x10
+
+
+/* A.9.8. VideoStreaming Interface Control Selectors */
 #define UVC_VS_CONTROL_UNDEFINED			0x00
 #define UVC_VS_PROBE_CONTROL				0x01
 #define UVC_VS_COMMIT_CONTROL				0x02
@@ -564,6 +584,65 @@ struct UVC_FRAME_MJPEG(n) {				\
 	__u8  bFrameIntervalType;			\
 	__u32 dwFrameInterval[n];			\
 } __attribute__ ((packed))
+
+/* Frame Based Payload - 3.1.1. Frame Based Payload Video Format Descriptor */
+struct uvc_format_frame_based {
+	__u8  bLength;
+	__u8  bDescriptorType;
+	__u8  bDescriptorSubType;
+	__u8  bFormatIndex;
+	__u8  bNumFrameDescriptors;
+	__u8  guidFormat[16];
+	__u8  bBitsPerPixel;
+        __u8  bDefaultFrameIndex;
+        __u8  bAspectRatioX;
+	__u8  bAspectRatioY;
+        __u8  bmInterlaceFlags;
+        __u8  bCopyProtect;
+        __u8  bVariableSize;
+} __attribute__((__packed__));
+
+#define UVC_DT_FORMAT_FRAME_BASED_SIZE			28
+
+/* Frame Based Payload - 3.1.2. Frame Based Payload Frame Descriptor */
+struct uvc_frame_frame_based {
+	__u8  bLength;
+	__u8  bDescriptorType;
+	__u8  bDescriptorSubType;
+	__u8  bFrameIndex;
+	__u8  bmCapabilities;
+	__u16 wWidth;
+	__u16 wHeight;
+	__u32 dwMinBitRate;
+	__u32 dwMaxBitRate;
+	__u32 dwDefaultFrameInterval;
+	__u8  bFrameIntervalType;
+        __u32 dwBytesPerLine;
+	__u32 dwFrameInterval[];
+} __attribute__((__packed__));
+
+#define UVC_DT_FRAME_FRAME_BASED_SIZE(n)			(26+4*(n))
+
+#define UVC_FRAME_FRAME_BASED(n) \
+	uvc_frame_frame_based_##n
+
+#define DECLARE_UVC_FRAME_FRAME_BASED(n)		\
+struct UVC_FRAME_FRAME_BASED(n) {			\
+	__u8  bLength;					\
+	__u8  bDescriptorType;				\
+	__u8  bDescriptorSubType;			\
+	__u8  bFrameIndex;				\
+	__u8  bmCapabilities;				\
+	__u16 wWidth;					\
+	__u16 wHeight;					\
+	__u32 dwMinBitRate;				\
+	__u32 dwMaxBitRate;				\
+	__u32 dwDefaultFrameInterval;			\
+	__u8  bFrameIntervalType;			\
+	__u32 dwBytesPerLine;                           \
+	__u32 dwFrameInterval[n];			\
+} __attribute__ ((packed))
+
 
 #endif /* __LINUX_USB_VIDEO_H */
 

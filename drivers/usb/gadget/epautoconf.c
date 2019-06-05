@@ -119,7 +119,7 @@ found_ep:
 
 		/* min() doesn't work on bitfields with gcc-3.5 */
 		if (size > 64)
-			size = 64;
+			size = 512; /* This fix is only for i.MX6 */
 		desc->wMaxPacketSize = cpu_to_le16(size);
 	}
 

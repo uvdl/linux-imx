@@ -351,7 +351,7 @@ int ipu_calc_stripes_sizes(const unsigned int input_frame_width,
 				       (right->input_width - 1)), (right->output_width - 1));
 			left->irr = right->irr = truncate(0, div, 1);
 		} else { /* with overlap */
-			onw = truncate(0, (((u64)output_frame_width - 1) << 32) >> 1,
+			onw = truncate(0, (((u64)output_frame_width) << 32) >> 1,
 				       output_f);
 			inw = truncate(0, onw * irr_opt, input_f);
 			/* this is the maximal inw which allows the same resizing ratio */
