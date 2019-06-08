@@ -1,0 +1,8 @@
+What		/sys/bus/iio/devices/iio:deviceX/al
+Date:		August 2016
+KernelVersion:	4.3
+Contact:	Florian Lobmaier <florian.lobmaier@ams.com>
+Description:
+		Get the current status of the alert bit in the configuration
+		register of the AS6200.
+		on/off
