@@ -236,7 +236,7 @@ static irqreturn_t as6200_alert_isr(int irq, void *dev_id)
 					0,
 					IIO_EV_TYPE_THRESH,
 					IIO_EV_DIR_EITHER),
-					iio_get_time_ns());
+					iio_get_time_ns(indio_dev));
 	return IRQ_HANDLED;
 }
 
