@@ -32,6 +32,7 @@
 			regulator-name = "usb_otg_vbus";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
 			gpio = <&gpio1 28 0>;	/* USB_ETH_PWR_EN */
 			enable-active-high;
 
@@ -46,6 +47,7 @@
 			regulator-name = "usb_h1_vbus";
 			regulator-min-microvolt = <5000000>;
 			regulator-max-microvolt = <5000000>;
+			regulator-always-on;
 			gpio = <&gpio4 21 0>;	/* ~5V_DISABLE */
 			enable-active-high;
 
