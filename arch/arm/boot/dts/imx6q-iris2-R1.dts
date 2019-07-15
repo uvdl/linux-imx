@@ -16,6 +16,17 @@
 / {
 	model = "Variscite i.MX6 QUAD VAR-DART Smart Device Board";
 	compatible = "fsl,imx6q-var-dart", "fsl,imx6q";
+
+	sound-hdmi {
+		compatible = "fsl,imx6q-audio-hdmi",
+		             "fsl,imx-audio-hdmi";
+		model = "imx-audio-hdmi";
+		hdmi-controller = <&hdmi_audio>;
+	};
+
+	mxcfb2 { /* hdmi - available on R1 */
+		status = "okay";
+	};
 };
 
 &cpu0 {
@@ -138,6 +149,11 @@
 		interrupt-parent = <&gpio5>;
 		interrupts = <12 IRQ_TYPE_EDGE_RISING>;
 		pinctrl-0 = <&pmx_temp_alarm_int>;
+	};
+
+	hdmi_edid: edid@50 {
+		compatible = "fsl,imx6-hdmi-i2c";
+		reg = <0x50>;
 	};
 };
 
