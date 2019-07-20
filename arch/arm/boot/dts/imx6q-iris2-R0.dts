@@ -16,6 +16,25 @@
 / {
 	model = "Variscite i.MX6 QUAD VAR-DART Smart Device Board";
 	compatible = "fsl,imx6q-var-dart", "fsl,imx6q";
+
+	pps {
+		compatible = "pps-gpio";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_pps>;
+		gpios = <&gpio7 11 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+};
+
+&iomuxc {
+	imx6qdl-var-som-mx6 {
+		pinctrl_pps: ppsgrp {
+			fsl,pins = <
+				MX6QDL_PAD_GPIO_16__GPIO7_IO11	0x1b0b1	/* 100K PU, HYS, KEEPER, FAST */
+			>;
+		};
+	};
 };
 
 &cpu0 {

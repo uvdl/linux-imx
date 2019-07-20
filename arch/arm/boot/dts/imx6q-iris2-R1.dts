@@ -24,8 +24,26 @@
 		hdmi-controller = <&hdmi_audio>;
 	};
 
+	pps {
+		compatible = "pps-gpio";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_pps>;
+		gpios = <&gpio4 18 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
 	mxcfb2 { /* hdmi - available on R1 */
 		status = "okay";
+	};
+};
+
+&iomuxc {
+	imx6qdl-var-som-mx6 {
+		pinctrl_pps: ppsgrp {
+			fsl,pins = <
+				MX6QDL_PAD_DI0_PIN2__GPIO4_IO18	0x1b0b1	/* 100K PU, HYS, KEEPER, FAST */
+			>;
+		};
 	};
 };
 
