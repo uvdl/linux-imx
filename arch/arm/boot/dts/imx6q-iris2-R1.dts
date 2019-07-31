@@ -10,7 +10,6 @@
 
 #include "imx6q.dtsi"
 #include "imx6qdl-iris2.dtsi"
-#include "imx6qdl-iris2-displays.dtsi"
 
 / {
 	model = "Variscite i.MX6 QUAD VAR-DART Smart Device Board";
@@ -34,6 +33,19 @@
 	mxcfb2 { /* hdmi - available on R1 */
 		status = "okay";
 	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		/* J2.7 GPIO_2 */
+		user {
+			label = "User";
+			gpios = <&gpio5 10 1>;	/* NB: required for SPI KSZ9893R to function (see issue #3) */
+			linux,code = <BTN_MISC>;
+			gpio-key,wakeup;
+		};
+	};
+
 };
 
 &iomuxc {
