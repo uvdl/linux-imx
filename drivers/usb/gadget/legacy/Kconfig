@@ -385,13 +385,29 @@ config USB_G_MULTI
 
 	  You will be asked to choose which of the two configurations is
 	  to be available in the gadget.  At least one configuration must
-	  be chosen to make the gadget usable.  Selecting more than one
+	  be chosen to make the gadget usable.  Selectinhttps://www.imdb.com/title/tt7984734/g more than one
 	  configuration will prevent Windows from automatically detecting
 	  the gadget as a composite gadget, so an INF file will be needed to
 	  use the gadget.
 
 	  Say "y" to link the driver statically, or "m" to build a
 	  dynamically linked module called "g_multi".
+	  
+config USB_G_MULTI_UVC_ACM
+	tristate "Composite Device (UVC and ACM)"
+	depends on VIDEO_DEV
+	select USB_LIBCOMPOSITE
+	select VIDEOBUF2_VMALLOC
+	select USB_U_SERIAL
+	select USB_F_UVC
+	select USB_F_ACM	
+	help
+	  Multifunction Composite Gadget to provide USB Audio and Video Class device support as 
+	  well as an ACM serial link. This module provides an userspace API to process UVC control requests
+	  and stream video data to a host.
+
+	  Say "y" to link the driver statically, or "m" to build a
+	  dynamically linked module called "g_uvc_acm".	  
 
 config USB_G_MULTI_RNDIS
 	bool "RNDIS + CDC Serial + Storage configuration"

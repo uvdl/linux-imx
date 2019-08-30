@@ -1,8 +1,8 @@
 /*
- *	webcam.c -- USB webcam gadget driver
+ *	multi_uvc_acm.c -- USB composite gadget driver
  *
- *	Copyright (C) 2009-2010
- *	    Laurent Pinchart (laurent.pinchart@ideasonboard.com)
+ *	Copyright (C) 2019
+ *	    Diego Chaverri (diego.chaverri@ridgerun.com)
  *
  *	This program is free software; you can redistribute it and/or modify
  *	it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 #include <linux/usb/video.h>
 
 #include "u_uvc.h"
+#include "u_serial.h"
 
 USB_GADGET_COMPOSITE_OPTIONS();
 
@@ -37,13 +38,13 @@ MODULE_PARM_DESC(streaming_maxburst, "0 - 15 (ss only)");
 static unsigned int trace;
 module_param(trace, uint, S_IRUGO|S_IWUSR);
 MODULE_PARM_DESC(trace, "Trace level bitmask");
-/* --------------------------------------------------------------------------
- * Device descriptor
- */
 
-#define WEBCAM_VENDOR_ID		0x1d6b	/* Linux Foundation */
-#define WEBCAM_PRODUCT_ID		0x0102	/* Webcam A/V gadget */
-#define WEBCAM_DEVICE_BCD		0x0010	/* 0.10 */
+/*************************** DEVICE DESCRIPTORS *************************/
+
+#define DRIVER_DESC				"Multifunction Composite Gadget"
+#define UVC_ACM_VENDOR_ID		0x1d6b	/* Linux Foundation */
+#define UVC_ACM_PRODUCT_ID		0x0102	/* Webcam A/V - serial gadget */
+#define UVC_ACM_DEVICE_BCD		0x0010	/* 0.10 */
 
 static char webcam_vendor_label[] = "Linux Foundation";
 static char webcam_product_label[] = "Webcam gadget";
@@ -53,28 +54,7 @@ static char webcam_config_label[] = "Video";
 
 #define STRING_DESCRIPTION_IDX		USB_GADGET_FIRST_AVAIL_IDX
 
-static struct usb_string webcam_strings[] = {
-	[USB_GADGET_MANUFACTURER_IDX].s = webcam_vendor_label,
-	[USB_GADGET_PRODUCT_IDX].s = webcam_product_label,
-	[USB_GADGET_SERIAL_IDX].s = "",
-	[STRING_DESCRIPTION_IDX].s = webcam_config_label,
-	{  }
-};
-
-static struct usb_gadget_strings webcam_stringtab = {
-	.language = 0x0409,	/* en-us */
-	.strings = webcam_strings,
-};
-
-static struct usb_gadget_strings *webcam_device_strings[] = {
-	&webcam_stringtab,
-	NULL,
-};
-
-static struct usb_function_instance *fi_uvc;
-static struct usb_function *f_uvc;
-
-static struct usb_device_descriptor webcam_device_descriptor = {
+static struct usb_device_descriptor device_desc = {
 	.bLength		= USB_DT_DEVICE_SIZE,
 	.bDescriptorType	= USB_DT_DEVICE,
 	/* .bcdUSB = DYNAMIC */
@@ -82,13 +62,31 @@ static struct usb_device_descriptor webcam_device_descriptor = {
 	.bDeviceSubClass	= 0x02,
 	.bDeviceProtocol	= 0x01,
 	.bMaxPacketSize0	= 0, /* dynamic */
-	.idVendor		= cpu_to_le16(WEBCAM_VENDOR_ID),
-	.idProduct		= cpu_to_le16(WEBCAM_PRODUCT_ID),
-	.bcdDevice		= cpu_to_le16(WEBCAM_DEVICE_BCD),
+	.idVendor		= cpu_to_le16(UVC_ACM_VENDOR_ID),
+	.idProduct		= cpu_to_le16(UVC_ACM_PRODUCT_ID),
+	.bcdDevice		= cpu_to_le16(UVC_ACM_DEVICE_BCD),
 	.iManufacturer		= 0, /* dynamic */
 	.iProduct		= 0, /* dynamic */
 	.iSerialNumber		= 0, /* dynamic */
 	.bNumConfigurations	= 0, /* dynamic */
+};
+
+static struct usb_string strings_dev[] = {
+	[USB_GADGET_MANUFACTURER_IDX].s = "",
+	[USB_GADGET_PRODUCT_IDX].s = DRIVER_DESC,
+	[USB_GADGET_SERIAL_IDX].s = "",
+	[STRING_DESCRIPTION_IDX].s = "",
+	{  }
+};
+
+static struct usb_gadget_strings dev_stringtab = {
+	.language = 0x0409,	/* en-us */
+	.strings = strings_dev,
+};
+
+static struct usb_gadget_strings *dev_strings[] = {
+	&dev_stringtab,
+	NULL,
 };
 
 DECLARE_UVC_HEADER_DESCRIPTOR(1);
@@ -453,28 +451,52 @@ static const struct uvc_descriptor_header * const uvc_ss_streaming_cls[] = {
 	NULL,
 };
 
-/* --------------------------------------------------------------------------
- * USB configuration
- */
+/*************************** CONFIGURATIONS *****************************/
+
+static struct usb_function_instance *fi_uvc;
+static struct usb_function *f_uvc;
+
+static struct usb_function_instance *f_acm_inst;
+static struct usb_function *f_acm;
+
 
 static int
-webcam_config_bind(struct usb_configuration *c)
+composite_config_bind(struct usb_configuration *c)
 {
 	int status = 0;
 
 	f_uvc = usb_get_function(fi_uvc);
 	if (IS_ERR(f_uvc))
 		return PTR_ERR(f_uvc);
-
+		
+	f_acm = usb_get_function(f_acm_inst);
+	if (IS_ERR(f_acm)) {
+		status = PTR_ERR(f_acm);
+		goto put_uvc;
+	}
+		
 	status = usb_add_function(c, f_uvc);
 	if (status < 0)
-		usb_put_function(f_uvc);
+		goto put_acm;
+		
+	status = usb_add_function(c, f_acm);
+	if (status)
+		goto remove_uvc;
+		
+	return 0;					
+				
+remove_uvc:
+	usb_remove_function(c, f_uvc);
+put_acm:
+	usb_put_function(f_uvc);
+put_uvc:
+	usb_put_function(f_uvc);
 
 	return status;
 }
 
-static struct usb_configuration webcam_config_driver = {
-	.label			= webcam_config_label,
+static struct usb_configuration uvc_acm_config_driver = {
+	.label					= DRIVER_DESC,
 	.bConfigurationValue	= 1,
 	.iConfiguration		= 0, /* dynamic */
 	.bmAttributes		= USB_CONFIG_ATT_SELFPOWER,
@@ -482,24 +504,35 @@ static struct usb_configuration webcam_config_driver = {
 };
 
 static int
-webcam_unbind(struct usb_composite_dev *cdev)
+composite_unbind(struct usb_composite_dev *cdev)
 {
-	if (!IS_ERR_OR_NULL(f_uvc))
+
 		usb_put_function(f_uvc);
-	if (!IS_ERR_OR_NULL(fi_uvc))
 		usb_put_function_instance(fi_uvc);
+		usb_put_function(f_acm);
+		usb_put_function_instance(f_acm_inst);
+		
 	return 0;
 }
 
 static int
-webcam_bind(struct usb_composite_dev *cdev)
+composite_bind(struct usb_composite_dev *cdev)
 {
 	struct f_uvc_opts *uvc_opts;
 	int ret;
+	int status;
 
 	fi_uvc = usb_get_function_instance("uvc");
 	if (IS_ERR(fi_uvc))
 		return PTR_ERR(fi_uvc);
+		
+	f_acm_inst = usb_get_function_instance("acm");
+	if (IS_ERR(f_acm_inst)) {
+		status = PTR_ERR(f_acm_inst);
+		goto fail_get_acm;
+	}
+
+	/**** UVC ****/
 
 	uvc_opts = container_of(fi_uvc, struct f_uvc_opts, func_inst);
 
@@ -517,28 +550,31 @@ webcam_bind(struct usb_composite_dev *cdev)
 	/* Allocate string descriptor numbers ... note that string contents
 	 * can be overridden by the composite_dev glue.
 	 */
-	ret = usb_string_ids_tab(cdev, webcam_strings);
-	if (ret < 0)
-		goto error;
-	webcam_device_descriptor.iManufacturer =
-		webcam_strings[USB_GADGET_MANUFACTURER_IDX].id;
-	webcam_device_descriptor.iProduct =
-		webcam_strings[USB_GADGET_PRODUCT_IDX].id;
-	webcam_config_driver.iConfiguration =
-		webcam_strings[STRING_DESCRIPTION_IDX].id;
+	status = usb_string_ids_tab(cdev, strings_dev);
+	if (status < 0)
+		goto fail;
+	device_desc.iManufacturer =
+		strings_dev[USB_GADGET_MANUFACTURER_IDX].id;
+	device_desc.iProduct =
+		strings_dev[USB_GADGET_PRODUCT_IDX].id;
+	uvc_acm_config_driver.iConfiguration =
+		strings_dev[STRING_DESCRIPTION_IDX].id;
 
 	/* Register our configuration. */
-	if ((ret = usb_add_config(cdev, &webcam_config_driver,
-					webcam_config_bind)) < 0)
-		goto error;
+	if ((status = usb_add_config(cdev, &uvc_acm_config_driver,
+					composite_config_bind)) < 0)
+		goto fail;
 
 	usb_composite_overwrite_options(cdev, &coverwrite);
-	INFO(cdev, "Webcam Video Gadget\n");
+	INFO(cdev, "USB Webcam-ACM Serial Composite Gadget\n");
 	return 0;
 
-error:
+fail:
+	usb_put_function_instance(f_acm_inst);
+fail_get_acm:
 	usb_put_function_instance(fi_uvc);
-	return ret;
+	
+	return status;
 }
 
 /* --------------------------------------------------------------------------
@@ -546,18 +582,18 @@ error:
  */
 
 static struct usb_composite_driver webcam_driver = {
-	.name		= "g_webcam",
-	.dev		= &webcam_device_descriptor,
-	.strings	= webcam_device_strings,
+	.name		= "g_uvc_acm",
+	.dev		= &device_desc,
+	.strings	= dev_strings,
 	.max_speed	= USB_SPEED_SUPER,
-	.bind		= webcam_bind,
-	.unbind		= webcam_unbind,
+	.bind		= composite_bind,
+	.unbind		= composite_unbind,
 };
 
 module_usb_composite_driver(webcam_driver);
 
-MODULE_AUTHOR("Laurent Pinchart");
-MODULE_DESCRIPTION("Webcam Video Gadget");
+MODULE_AUTHOR("Diego Chaverri");
+MODULE_DESCRIPTION("Webcam - ACM Serial Composite Gadget");
 MODULE_LICENSE("GPL");
 MODULE_VERSION("0.1.0");
 
