@@ -1,0 +1,47 @@
+/*
+ * https://toradex.com/community/questions/19618/is-it-possible-to-disable-the-gpu-on-apalis-imx6-u.html
+ * https://community.nxp.com/thread/309954
+ */
+
+/ {
+	soc {
+        gpu@00130000 {
+			status = "disabled";
+		};
+
+		gpu_3d: gpu@00130000 {
+			status = "disabled";
+		};
+
+		gpu_2d: gpu@00134000 {
+			status = "disabled";
+		};
+
+		gpu_vg: gpu@02204000 {
+			status = "disabled";
+		};
+
+		aips-bus@02000000 { /* AIPS1 */
+			vpu_fsl: vpu_fsl@02040000 {
+				status = "disabled";
+			};
+		};
+	};
+
+	mxcfb1: fb@0 {
+		status = "disabled";
+	};
+
+	mxcfb2: fb@1 {
+		status = "disabled";
+	};
+
+	mxcfb3: fb@2 {
+		status = "disabled";
+	};
+
+	mxcfb4: fb@3 {
+		status = "disabled";
+	};
+
+};

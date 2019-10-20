@@ -10,6 +10,7 @@
 
 #include "imx6q.dtsi"
 #include "imx6qdl-iris2.dtsi"
+#include "imx6q-iris2-low-power.dtsi"
 
 / {
 	model = "Variscite i.MX6 Quad/Dual DART-MX6";
