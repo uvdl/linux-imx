@@ -2531,26 +2531,22 @@ static int ioctl_enum_framesizes(struct v4l2_int_device *s,
 				 struct v4l2_frmsizeenum *fsize)
 {
 	struct tc_data *td = s->priv;
-	enum tc358743_mode query_mode= fsize->index;
-	enum tc358743_mode mode = td->mode;
+	struct sensor_data *sensor = &td->sensor;
+	int index = fsize->index;
 
-	if (IS_COLORBAR(mode)) {
-		if (query_mode > MAX_COLORBAR)
-			return -EINVAL;
-		mode = query_mode;
-	} else {
-		if (query_mode)
-			return -EINVAL;
-	}
-	pr_debug("%s, mode: %d\n", __func__, mode);
+	if (!index)
+		index = sensor->streamcap.capturemode;
+	pr_debug("%s, INDEX: %d\n", __func__, index);
+	if (index >= tc358743_mode_MAX)
+		return -EINVAL;
 
-	fsize->pixel_format = get_pixelformat(0, mode);
+	fsize->pixel_format = get_pixelformat(0, index);
 	fsize->discrete.width =
-			    tc358743_mode_info_data[0][mode].width;
+			    tc358743_mode_info_data[0][index].width;
 	fsize->discrete.height =
-			    tc358743_mode_info_data[0][mode].height;
+			    tc358743_mode_info_data[0][index].height;
 	pr_debug("%s %d:%d format: %x\n", __func__, fsize->discrete.width, fsize->discrete.height, fsize->pixel_format);
-	return 0;
+	return 0;	
 }
 
 /*!
