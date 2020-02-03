@@ -440,6 +440,8 @@ dtb-$(CONFIG_SOC_IMX6Q) += \
 	imx6q-udoo.dtb \
 	imx6q-utilite-pro.dtb \
 	imx6q-iris2-R0.dtb \
+	imx6q-iris2-R1.dtb \
+	imx6q-nightcrawler-R0.dtb \
 	imx6q-var-dart.dtb \
 	imx6q-var-som-cap.dtb \
 	imx6q-var-som-res.dtb \
