@@ -385,7 +385,7 @@ config USB_G_MULTI
 
 	  You will be asked to choose which of the two configurations is
 	  to be available in the gadget.  At least one configuration must
-	  be chosen to make the gadget usable.  Selectinhttps://www.imdb.com/title/tt7984734/g more than one
+	  be chosen to make the gadget usable.  Selecting more than one
 	  configuration will prevent Windows from automatically detecting
 	  the gadget as a composite gadget, so an INF file will be needed to
 	  use the gadget.
