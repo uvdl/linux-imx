@@ -34,17 +34,9 @@
 		status = "okay";
 	};
 
-        gpio-keys {
-                compatible = "gpio-keys";
-
-                /* GPIO_4 */
-                user {
-                        label = "User";
-                        gpios = <&gpio5 10 1>;  /* NB: required for ECSPI1 to function (see issue #3) */
-                        linux,code = <BTN_MISC>;
-                        gpio-key,wakeup;
-                };
-        };
+	gpio-keys {
+		compatible = "gpio-keys";
+	};
 
 };
 
